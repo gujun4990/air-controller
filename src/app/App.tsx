@@ -69,7 +69,7 @@ export default function App() {
       ]);
 
       if (!configResult.success || !configResult.data) {
-        setStatus({ tone: "error", text: configResult.message });
+        setStatus({ tone: "error", text: normalizeStatusText(configResult.message) });
         return;
       }
 
@@ -96,7 +96,7 @@ export default function App() {
         await handleRefresh();
       }
     } catch (error) {
-      setStatus({ tone: "error", text: `初始化失败: ${String(error)}` });
+      setStatus({ tone: "error", text: normalizeStatusText(`初始化失败: ${String(error)}`) });
     } finally {
       setBusy(false);
     }
@@ -115,9 +115,12 @@ export default function App() {
       if (result.data) {
         setClimateState(result.data);
       }
-      setStatus({ tone: result.success ? "success" : "error", text: result.message });
+      setStatus({
+        tone: result.success ? "success" : "error",
+        text: normalizeStatusText(result.message)
+      });
     } catch (error) {
-      setStatus({ tone: "error", text: `请求失败: ${String(error)}` });
+      setStatus({ tone: "error", text: normalizeStatusText(`请求失败: ${String(error)}`) });
     } finally {
       setBusy(false);
     }
@@ -145,7 +148,10 @@ export default function App() {
     setBusy(true);
     try {
       const result = await saveConfig(nextConfig);
-      setStatus({ tone: result.success ? "success" : "error", text: result.message });
+      setStatus({
+        tone: result.success ? "success" : "error",
+        text: normalizeStatusText(result.message)
+      });
 
       if (!result.success || !result.data) {
         return false;
@@ -157,13 +163,13 @@ export default function App() {
         const testResult = await testConnection();
         setStatus({
           tone: testResult.success ? "success" : "error",
-          text: testResult.message
+          text: normalizeStatusText(testResult.message)
         });
       }
 
       return true;
     } catch (error) {
-      setStatus({ tone: "error", text: `保存配置失败: ${String(error)}` });
+      setStatus({ tone: "error", text: normalizeStatusText(`保存配置失败: ${String(error)}`) });
       return false;
     } finally {
       setBusy(false);
@@ -176,18 +182,18 @@ export default function App() {
       const result = await saveToken(token);
       setHasToken(Boolean(result.data));
       if (!result.success) {
-        setStatus({ tone: "error", text: result.message });
+        setStatus({ tone: "error", text: normalizeStatusText(result.message) });
         return false;
       }
 
       const testResult = await testConnection();
       setStatus({
         tone: testResult.success ? "success" : "error",
-        text: testResult.message
+        text: normalizeStatusText(testResult.message)
       });
       return true;
     } catch (error) {
-      setStatus({ tone: "error", text: `保存 Token 失败: ${String(error)}` });
+      setStatus({ tone: "error", text: normalizeStatusText(`保存访问令牌失败: ${String(error)}`) });
       return false;
     } finally {
       setBusy(false);
@@ -195,17 +201,21 @@ export default function App() {
   }
 
   async function handleMinimize() {
-    await getCurrentWindow().minimize();
+    await getCurrentWindow().hide();
   }
 
   async function handleClose() {
-    await getCurrentWindow().close();
+    await getCurrentWindow().hide();
+  }
+
+  async function handleStartDragging() {
+    await getCurrentWindow().startDragging();
   }
 
   return (
     <div className="app-shell">
       <header className="title-bar">
-        <div className="title-bar-drag" data-tauri-drag-region>
+        <div className="title-bar-drag" onMouseDown={() => void handleStartDragging()}>
           <span className="title-bar-text">空调控制器</span>
         </div>
         <div className="title-bar-controls">
@@ -288,4 +298,8 @@ function clampTemperature(value: number, config: AppConfig, climateState: Climat
   const runtimeMax = climateState?.maxTemperature ?? config.maxTemperature;
   const bounded = Math.min(runtimeMax, Math.max(runtimeMin, value));
   return Math.round(bounded / STEP_CELSIUS) * STEP_CELSIUS;
+}
+
+function normalizeStatusText(text: string) {
+  return text.replace(/(\d+(?:\.\d+)?)\s*摄氏度/g, (_match, value) => `${Math.round(Number(value))} 摄氏度`);
 }

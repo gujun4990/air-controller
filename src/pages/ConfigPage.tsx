@@ -18,11 +18,9 @@ export default function ConfigPage({
 }: Props) {
   const [draft, setDraft] = useState<AppConfig>(config);
   const [tokenInput, setTokenInput] = useState("");
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     setDraft(config);
-    setSaveError(null);
   }, [config]);
 
   function update<K extends keyof AppConfig>(key: K, value: AppConfig[K]) {
@@ -31,7 +29,6 @@ export default function ConfigPage({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSaveError(null);
 
     const payload: AppConfig = {
       ...draft,
@@ -46,7 +43,6 @@ export default function ConfigPage({
     const saved = await onSaveConfig(payload);
     if (!saved) {
       setDraft(config);
-      setSaveError("验证失败，配置未保存。请检查填写内容。");
       return;
     }
 
@@ -72,8 +68,6 @@ export default function ConfigPage({
       </div>
 
       <form className="config-form" onSubmit={handleSubmit}>
-        {saveError ? <div className="save-error-banner">{saveError}</div> : null}
-
         <div className="config-grid">
           <section className="settings-section">
             <div className="settings-head">
