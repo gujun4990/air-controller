@@ -52,5 +52,5 @@ jobs:
       - name: Install web dependencies
         run: npm install
 
-      - name: Cargo check
-        run: cargo check --manifest-path src-tauri/Cargo.toml
+      - name: Build Tauri app without bundles
+        run: npm exec tauri build -- --no-bundle
