@@ -208,21 +208,29 @@ export default function App() {
     await getCurrentWindow().hide();
   }
 
-  async function handleStartDragging() {
-    await getCurrentWindow().startDragging();
-  }
-
   return (
     <div className="app-shell">
       <header className="title-bar">
-        <div className="title-bar-drag" onMouseDown={() => void handleStartDragging()}>
+        <div className="title-bar-drag" data-tauri-drag-region>
           <span className="title-bar-text">空调控制器</span>
         </div>
         <div className="title-bar-controls">
-          <button className="title-bar-btn" onClick={() => void handleMinimize()} title="最小化">
+          <button
+            className="title-bar-btn"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={() => void handleMinimize()}
+            title="最小化"
+            type="button"
+          >
             -
           </button>
-          <button className="title-bar-btn close-btn" onClick={() => void handleClose()} title="关闭">
+          <button
+            className="title-bar-btn close-btn"
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={() => void handleClose()}
+            title="关闭"
+            type="button"
+          >
             x
           </button>
         </div>
@@ -301,5 +309,7 @@ function clampTemperature(value: number, config: AppConfig, climateState: Climat
 }
 
 function normalizeStatusText(text: string) {
-  return text.replace(/(\d+(?:\.\d+)?)\s*摄氏度/g, (_match, value) => `${Math.round(Number(value))} 摄氏度`);
+  return text
+    .replace(/(\d+(?:\.\d+)?)\s*摄氏度/g, (_match, value) => `${Math.round(Number(value))} 摄氏度`)
+    .replace(/(\d+(?:\.\d+)?)\s*°C/g, (_match, value) => `${Math.round(Number(value))} °C`);
 }
