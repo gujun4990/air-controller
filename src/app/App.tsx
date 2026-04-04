@@ -8,8 +8,7 @@ import {
   hasToken as checkToken,
   hideWindow,
   refreshState,
-  saveConfig,
-  saveToken,
+  saveSettings,
   setTemperature,
   turnOff,
   turnOn
@@ -138,10 +137,10 @@ export default function App() {
     await runClimateAction(() => setTemperature(next));
   }
 
-  async function handleSaveConfig(nextConfig: AppConfig): Promise<boolean> {
+  async function handleSaveSettings(nextConfig: AppConfig, token: string): Promise<boolean> {
     setBusy(true);
     try {
-      const result = await saveConfig(nextConfig);
+      const result = await saveSettings(nextConfig, token.trim() || null);
       setStatus({
         tone: result.success ? "success" : "error",
         text: normalizeStatusText(result.message)
@@ -151,31 +150,12 @@ export default function App() {
         return false;
       }
 
-      setConfig(result.data);
+      setConfig(result.data.config);
+      setHasToken(result.data.hasToken);
 
       return true;
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`保存配置失败: ${String(error)}`) });
-      return false;
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleSaveToken(token: string): Promise<boolean> {
-    setBusy(true);
-    try {
-      const result = await saveToken(token);
-      setHasToken(Boolean(result.data));
-      if (!result.success) {
-        setStatus({ tone: "error", text: normalizeStatusText(result.message) });
-        return false;
-      }
-
-      setStatus({ tone: "success", text: "访问令牌已保存。" });
-      return true;
-    } catch (error) {
-      setStatus({ tone: "error", text: normalizeStatusText(`保存访问令牌失败: ${String(error)}`) });
       return false;
     } finally {
       setBusy(false);
@@ -285,8 +265,7 @@ export default function App() {
               busy={busy}
               config={config}
               hasToken={hasToken}
-              onSaveConfig={handleSaveConfig}
-              onSaveToken={handleSaveToken}
+              onSaveSettings={handleSaveSettings}
             />
           )}
         </div>

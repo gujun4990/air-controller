@@ -31,6 +31,11 @@ export type ServiceResult<T> = {
   data: T | null;
 };
 
+export type SavedSettings = {
+  config: AppConfig;
+  hasToken: boolean;
+};
+
 export const defaultConfig: AppConfig = {
   baseUrl: "",
   climateEntityId: "climate.living_room_ac",

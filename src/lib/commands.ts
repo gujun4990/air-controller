@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppConfig, ClimateState, ServiceResult } from "./types";
+import type { AppConfig, ClimateState, SavedSettings, ServiceResult } from "./types";
 
 export function getConfig() {
   return invoke<ServiceResult<AppConfig>>("get_config");
@@ -7,6 +7,10 @@ export function getConfig() {
 
 export function saveConfig(config: AppConfig) {
   return invoke<ServiceResult<AppConfig>>("save_config", { config });
+}
+
+export function saveSettings(config: AppConfig, token: string | null) {
+  return invoke<ServiceResult<SavedSettings>>("save_settings", { config, token });
 }
 
 export function hasToken() {

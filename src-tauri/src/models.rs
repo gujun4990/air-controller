@@ -56,6 +56,13 @@ pub struct ServiceResult<T> {
     pub data: Option<T>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SavedSettings {
+    pub config: AppConfig,
+    pub has_token: bool,
+}
+
 impl<T> ServiceResult<T> {
     pub fn ok(message: impl Into<String>, data: T) -> Self {
         Self {

@@ -5,16 +5,14 @@ type Props = {
   config: AppConfig;
   hasToken: boolean;
   busy: boolean;
-  onSaveConfig: (config: AppConfig) => Promise<boolean>;
-  onSaveToken: (token: string) => Promise<boolean>;
+  onSaveSettings: (config: AppConfig, token: string) => Promise<boolean>;
 };
 
 export default function ConfigPage({
   config,
   hasToken,
   busy,
-  onSaveConfig,
-  onSaveToken
+  onSaveSettings
 }: Props) {
   const [draft, setDraft] = useState<AppConfig>(config);
   const [tokenInput, setTokenInput] = useState("");
@@ -43,21 +41,14 @@ export default function ConfigPage({
       autoPowerOnOnStartup: draft.launchOnSystemStartup && draft.autoPowerOnOnStartup
     };
 
-    const saved = await onSaveConfig(payload);
+    const saved = await onSaveSettings(payload, tokenInput);
     if (!saved) {
       setDraft(config);
       return;
     }
 
     setDraft(payload);
-
-    const token = tokenInput.trim();
-    if (token.length > 0) {
-      const tokenSaved = await onSaveToken(token);
-      if (tokenSaved) {
-        setTokenInput("");
-      }
-    }
+    setTokenInput("");
   }
 
   return (
