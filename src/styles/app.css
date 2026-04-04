@@ -114,6 +114,23 @@ input {
   line-height: 1;
 }
 
+.title-bar-icon {
+  display: inline-block;
+}
+
+.minimize-icon {
+  width: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.close-icon {
+  font-size: 0.95rem;
+  line-height: 1;
+  transform: translateY(-0.5px);
+}
+
 .title-bar-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.12);
   color: #f5f7fb;
