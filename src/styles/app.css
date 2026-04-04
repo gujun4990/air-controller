@@ -87,6 +87,7 @@ input {
   flex: 1;
   height: 100%;
   cursor: move;
+  pointer-events: auto;
 }
 
 .title-bar-text {

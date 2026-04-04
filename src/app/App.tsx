@@ -1,6 +1,5 @@
 import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { type MouseEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import ConfigPage from "../pages/ConfigPage";
 import MainPage from "../pages/MainPage";
 import {
@@ -209,18 +208,10 @@ export default function App() {
     await hideWindow();
   }
 
-  async function handleStartDragging(event: MouseEvent<HTMLElement>) {
-    if (event.button !== 0) {
-      return;
-    }
-
-    await getCurrentWindow().startDragging();
-  }
-
   return (
     <div className="app-shell">
       <header className="title-bar">
-        <div className="title-bar-drag" onMouseDown={(event) => void handleStartDragging(event)}>
+        <div className="title-bar-drag" data-tauri-drag-region>
           <span className="title-bar-text">空调控制器</span>
         </div>
         <div className="title-bar-controls">
