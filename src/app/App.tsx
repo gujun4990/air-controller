@@ -219,8 +219,8 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <header className="title-bar" data-tauri-drag-region onMouseDown={(event) => void handleStartDragging(event)}>
-        <div className="title-bar-drag" data-tauri-drag-region>
+      <header className="title-bar">
+        <div className="title-bar-drag" onMouseDown={(event) => void handleStartDragging(event)}>
           <span className="title-bar-text">空调控制器</span>
         </div>
         <div className="title-bar-controls">
