@@ -25,7 +25,7 @@ npm run check:headless
    - 最小化隐藏
    - 配置保存
    - Token 保存
-   - Home Assistant 开关机与调温
+   - 空调开关机与调温
    - 自动开机
 
 详细检查项见：

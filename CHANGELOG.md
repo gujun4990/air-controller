@@ -7,10 +7,10 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 1. Tauri + React cross-platform project scaffold
-2. Main control page for Home Assistant climate state, power, refresh, and temperature control
+2. Main control page for climate state, power, refresh, and temperature control
 3. Config page for base URL, entity ID, startup settings, climate defaults, and token management
 4. Rust config store with validation and legacy `appsettings.json` import support
-5. Rust Home Assistant client for state fetch, turn on, turn off, and set temperature
+5. Rust service client for state fetch, turn on, turn off, and set temperature
 6. Secure token storage abstraction via system keychain APIs
 7. Tray menu with open, config, and quit actions
 8. Close-to-tray and minimize-to-tray behavior

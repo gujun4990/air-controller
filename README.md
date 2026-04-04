@@ -1,6 +1,6 @@
 # air-controller
 
-`AirController` 是一个基于 `Tauri + React` 的跨平台 Home Assistant 空调控制桌面应用。
+`AirController` 是一个基于 `Tauri + React` 的跨平台空调控制桌面应用。
 
 支持目标：
 
@@ -254,7 +254,7 @@ sudo apt-get install -f
 安装完成后：
 
 1. 从应用菜单启动 `AirController`
-2. 首次进入配置页填写 `Home Assistant` 地址、实体 ID 和 Token
+2. 首次进入配置页填写服务地址、空调 ID 和访问令牌
 3. 确认系统密钥服务可用，否则 token 无法保存
 
 #### Windows
@@ -266,7 +266,7 @@ sudo apt-get install -f
 1. 双击安装包
 2. 按向导完成安装
 3. 从开始菜单启动 `AirController`
-4. 首次进入配置页填写 `Home Assistant` 地址、实体 ID 和 Token
+4. 首次进入配置页填写服务地址、空调 ID 和访问令牌
 
 #### macOS
 
@@ -277,7 +277,7 @@ sudo apt-get install -f
 1. 打开 `.dmg`
 2. 将 `AirController.app` 拖入 `Applications`
 3. 从启动台或 `Applications` 打开应用
-4. 首次进入配置页填写 `Home Assistant` 地址、实体 ID 和 Token
+4. 首次进入配置页填写服务地址、空调 ID 和访问令牌
 
 如果发布版本尚未签名或 notarize，首次打开可能需要手动放行。
 

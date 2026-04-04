@@ -9,9 +9,15 @@
   box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
 body {
   margin: 0;
-  height: 100vh;
   overflow: hidden;
   background:
     radial-gradient(circle at top right, rgba(96, 165, 250, 0.24), transparent 30%),
@@ -63,15 +69,69 @@ input {
   color: inherit;
 }
 
-/* ── Shell ─────────────────────────────────────── */
+.title-bar {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  background: rgba(7, 13, 24, 0.92);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  padding: 0 0.65rem;
+  user-select: none;
+}
+
+.title-bar-drag {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  height: 100%;
+}
+
+.title-bar-text {
+  font-size: 0.82rem;
+  color: #91a0b8;
+  letter-spacing: 0.04em;
+}
+
+.title-bar-controls {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.title-bar-btn {
+  width: 32px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  font-size: 0.85rem;
+  padding: 0;
+  line-height: 1;
+}
+
+.title-bar-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5f7fb;
+}
+
+.close-btn:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.7);
+  color: #fff;
+}
 
 .app-shell {
   display: grid;
   grid-template-columns: 156px minmax(0, 1fr);
-  height: 100vh;
+  grid-template-rows: 36px 1fr;
+  width: 100%;
+  height: 100%;
 }
 
 .sidebar {
+  grid-row: 2;
   padding: 0.85rem;
   border-right: 1px solid rgba(148, 163, 184, 0.1);
   background: rgba(7, 13, 24, 0.72);
@@ -81,36 +141,15 @@ input {
   gap: 1rem;
 }
 
-.sidebar h1 {
+.brand-block h1 {
   margin: 0;
   font-size: 1.05rem;
 }
 
-.sidebar p {
+.brand-block p {
   margin: 0.15rem 0 0;
   font-size: 0.8rem;
   color: #91a0b8;
-}
-
-.panel h2 {
-  margin: 0;
-  font-size: 1rem;
-}
-
-.panel p,
-label span,
-.sidebar-footer span {
-  color: #91a0b8;
-  font-size: 0.85rem;
-}
-
-.eyebrow {
-  display: inline-block;
-  margin-bottom: 0.25rem;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  color: #7dd3fc;
 }
 
 .nav-list {
@@ -132,26 +171,30 @@ label span,
   margin-top: auto;
   display: grid;
   gap: 0.3rem;
+  color: #91a0b8;
   font-size: 0.82rem;
 }
 
 .content-shell {
+  grid-row: 2;
   padding: 0.85rem;
-  overflow-y: auto;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
 }
-
-/* ── Status Banner ─────────────────────────────── */
 
 .status-banner {
   display: flex;
   gap: 0.6rem;
   align-items: center;
   padding: 0.5rem 0.7rem;
-  margin-bottom: 0.7rem;
   border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.14);
   background: rgba(15, 23, 42, 0.54);
   font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 .status-banner strong {
@@ -177,7 +220,11 @@ label span,
   background: rgba(14, 116, 144, 0.16);
 }
 
-/* ── Panel ─────────────────────────────────────── */
+.page-shell {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
 
 .panel {
   padding: 0.85rem;
@@ -187,45 +234,76 @@ label span,
   backdrop-filter: blur(14px);
 }
 
-/* ── Control View (Main Page) ─────────────────── */
+.panel h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.panel p,
+label span {
+  color: #91a0b8;
+  font-size: 0.85rem;
+}
+
+.eyebrow {
+  display: inline-block;
+  margin-bottom: 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #7dd3fc;
+}
+
+.control-view,
+.config-shell {
+  width: 100%;
+  min-height: 0;
+}
 
 .control-view {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
 }
 
 .hero-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
     linear-gradient(135deg, rgba(30, 64, 175, 0.18), rgba(14, 165, 233, 0.08));
 }
 
-.hero-head {
+.hero-head,
+.panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.7rem;
   margin-bottom: 0.7rem;
+  flex-shrink: 0;
 }
 
 .hero-grid {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 1.4fr 1fr;
-  gap: 0.7rem;
+  gap: 0.8rem;
 }
 
 .climate-stage {
   display: grid;
-  gap: 0.6rem;
-  align-content: start;
+  grid-template-rows: 1fr auto;
+  gap: 0.8rem;
+  min-height: 0;
 }
-
-/* ── Temperature Ring ──────────────────────────── */
 
 .temperature-ring {
   display: grid;
   place-items: center;
   position: relative;
-  height: 200px;
+  min-height: 0;
+  padding: 0.4rem;
   border-radius: 18px;
   background:
     radial-gradient(circle at 50% 48%, rgba(96, 165, 250, 0.26), transparent 42%),
@@ -255,8 +333,8 @@ label span,
   display: grid;
   gap: 0.3rem;
   place-items: center;
-  width: 152px;
-  height: 152px;
+  width: 164px;
+  height: 164px;
   border-radius: 999px;
   background:
     radial-gradient(circle at top, rgba(59, 130, 246, 0.3), transparent 38%),
@@ -275,39 +353,29 @@ label span,
 }
 
 .temperature-core strong {
-  font-size: 1.75rem;
+  font-size: 1.9rem;
   line-height: 1;
 }
-
-/* ── Action Buttons ────────────────────────────── */
 
 .unified-control-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.55rem;
+  gap: 0.6rem;
 }
 
 .equal-action-button {
   width: 100%;
   min-width: 0;
-  font-size: 0.88rem;
-  padding: 0.6rem 0.5rem;
+  min-height: 42px;
+  font-size: 0.9rem;
+  padding: 0.65rem 0.5rem;
 }
-
-.step-hint {
-  color: #93a4be;
-  font-size: 0.82rem;
-}
-
-/* ── Device Status Stack ───────────────────────── */
 
 .status-stack {
   display: grid;
-  gap: 0.55rem;
-}
-
-.device-stack {
-  align-content: start;
+  grid-template-rows: auto 1fr;
+  gap: 0.65rem;
+  min-height: 0;
 }
 
 .device-summary-card,
@@ -339,6 +407,7 @@ label span,
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.45rem;
+  min-height: 0;
 }
 
 .compact-entity {
@@ -349,31 +418,29 @@ label span,
   word-break: break-all;
 }
 
-.compact-entity strong {
-  font-size: 0.85rem;
-}
-
-/* ── Config Page ───────────────────────────────── */
-
 .config-shell {
-  max-width: 100%;
-}
-
-.panel-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.7rem;
-  margin-bottom: 0.7rem;
+  flex-direction: column;
 }
 
 .config-form {
+  flex: 1;
+  min-height: 0;
   display: grid;
+  grid-template-rows: auto 1fr auto;
   gap: 0.7rem;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+  min-height: 0;
 }
 
 .settings-section {
   display: grid;
+  grid-template-rows: auto 1fr;
   gap: 0.6rem;
   padding: 0.75rem;
   border-radius: 14px;
@@ -394,15 +461,11 @@ label span,
 .settings-grid {
   display: grid;
   gap: 0.6rem;
-}
-
-.single-column {
-  grid-template-columns: 1fr;
+  align-content: start;
 }
 
 .checkbox-grid {
-  display: grid;
-  gap: 0.5rem;
+  align-content: center;
 }
 
 .checkbox-row {
@@ -426,6 +489,14 @@ label {
 .actions-row,
 .config-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: 0.6rem;
+}
+
+.save-error-banner {
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  background: rgba(127, 29, 29, 0.3);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  color: #fca5a5;
+  font-size: 0.85rem;
 }

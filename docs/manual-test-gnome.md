@@ -6,7 +6,7 @@
 
 1. 已安装应用或可通过 `npm exec tauri dev` 启动
 2. GNOME 会话可正常显示系统托盘区域或对应扩展
-3. Home Assistant 地址、实体 ID、Token 已准备好
+3. 服务地址、空调 ID、访问令牌已准备好
 4. Linux Secret Service 可用
 
 ## 首次启动

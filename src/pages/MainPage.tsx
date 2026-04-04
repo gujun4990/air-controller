@@ -11,7 +11,7 @@ type Props = {
 };
 
 function formatTemperature(value: number | null) {
-  return value === null ? "-" : `${value.toFixed(1)} °C`;
+  return value === null ? "-" : `${Math.round(value)} °C`;
 }
 
 export default function MainPage({
@@ -37,8 +37,8 @@ export default function MainPage({
       <div className="hero-panel panel">
         <div className="hero-head">
           <div>
-            <span className="eyebrow">DEVICE CONTROL</span>
-            <h2>空调控制</h2>
+            <span className="eyebrow">设备控制</span>
+            <h2>空调</h2>
           </div>
           <button className="ghost" disabled={busy} onClick={() => void onRefresh()}>
             刷新
@@ -70,10 +70,6 @@ export default function MainPage({
               <button className="secondary pill-button equal-action-button" disabled={busy || !canAdjustTemperature} onClick={() => void onChangeTemperature(STEP_CELSIUS)}>
                 温度 +
               </button>
-            </div>
-
-            <div className="step-hint step-inline">
-              {canAdjustTemperature ? `每次调节步长：${STEP_CELSIUS} °C` : "请先刷新状态并确保空调已开机"}
             </div>
           </div>
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-`AirController` 是一个基于 `Tauri + React + TypeScript + Rust` 的桌面应用，用于通过 `Home Assistant` 控制空调实体。
+`AirController` 是一个基于 `Tauri + React + TypeScript + Rust` 的桌面应用，用于控制服务中的空调设备。
 
 核心边界：
 
