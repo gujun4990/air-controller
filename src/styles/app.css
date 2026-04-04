@@ -88,6 +88,7 @@ input {
   height: 100%;
   cursor: move;
   pointer-events: auto;
+  app-region: drag;
 }
 
 .title-bar-text {
@@ -100,6 +101,7 @@ input {
 .title-bar-controls {
   display: flex;
   gap: 0.25rem;
+  app-region: no-drag;
 }
 
 .title-bar-btn {
@@ -113,6 +115,7 @@ input {
   font-size: 0.85rem;
   padding: 0;
   line-height: 1;
+  app-region: no-drag;
 }
 
 .title-bar-icon {
