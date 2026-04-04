@@ -37,10 +37,6 @@ export function setTemperature(temperature: number) {
   return invoke<ServiceResult<ClimateState>>("set_temperature", { temperature });
 }
 
-export function exportConfig(path: string) {
-  return invoke<ServiceResult<boolean>>("export_config", { path });
-}
-
 export function getLaunchOnStartup() {
   return invoke<ServiceResult<boolean>>("get_launch_on_startup");
 }

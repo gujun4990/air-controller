@@ -1,5 +1,6 @@
 :root {
   font-family: "Segoe UI", Inter, sans-serif;
+  font-size: 14px;
   color: #f5f7fb;
   background: #0a1224;
 }
@@ -10,7 +11,8 @@
 
 body {
   margin: 0;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background:
     radial-gradient(circle at top right, rgba(96, 165, 250, 0.24), transparent 30%),
     radial-gradient(circle at bottom left, rgba(56, 189, 248, 0.12), transparent 24%),
@@ -24,15 +26,12 @@ input {
 
 button {
   border: 0;
-  border-radius: 14px;
-  padding: 0.8rem 1.1rem;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-radius: 12px;
+  padding: 0.65rem 0.9rem;
+  background: rgba(255, 255, 255, 0.08);
   color: white;
   cursor: pointer;
-  transition:
-    transform 140ms ease,
-    opacity 140ms ease,
-    background 140ms ease;
+  transition: transform 120ms ease, opacity 120ms ease;
 }
 
 button:hover:not(:disabled) {
@@ -50,7 +49,7 @@ button.ghost {
 }
 
 button:disabled {
-  opacity: 0.55;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
@@ -58,44 +57,57 @@ button:disabled {
 input {
   width: 100%;
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 14px;
-  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
   background: rgba(15, 23, 42, 0.44);
   color: inherit;
 }
 
+/* ── Shell ─────────────────────────────────────── */
+
 .app-shell {
   display: grid;
-  grid-template-columns: 176px minmax(0, 1fr);
-  min-height: 100vh;
+  grid-template-columns: 156px minmax(0, 1fr);
+  height: 100vh;
 }
 
 .sidebar {
-  padding: 1rem;
+  padding: 0.85rem;
   border-right: 1px solid rgba(148, 163, 184, 0.1);
   background: rgba(7, 13, 24, 0.72);
   backdrop-filter: blur(14px);
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 1rem;
 }
 
-.sidebar h1,
+.sidebar h1 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.sidebar p {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: #91a0b8;
+}
+
 .panel h2 {
   margin: 0;
+  font-size: 1rem;
 }
 
-.sidebar p,
 .panel p,
 label span,
 .sidebar-footer span {
   color: #91a0b8;
+  font-size: 0.85rem;
 }
 
 .eyebrow {
   display: inline-block;
-  margin-bottom: 0.35rem;
-  font-size: 0.72rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.12em;
   color: #7dd3fc;
@@ -103,12 +115,13 @@ label span,
 
 .nav-list {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.45rem;
 }
 
 .nav-item {
   text-align: left;
   background: rgba(255, 255, 255, 0.04);
+  font-size: 0.9rem;
 }
 
 .nav-item.active {
@@ -118,28 +131,31 @@ label span,
 .sidebar-footer {
   margin-top: auto;
   display: grid;
-  gap: 0.35rem;
-  font-size: 0.9rem;
+  gap: 0.3rem;
+  font-size: 0.82rem;
 }
 
 .content-shell {
-  padding: 1rem;
+  padding: 0.85rem;
+  overflow-y: auto;
 }
+
+/* ── Status Banner ─────────────────────────────── */
 
 .status-banner {
   display: flex;
-  gap: 0.7rem;
+  gap: 0.6rem;
   align-items: center;
-  padding: 0.65rem 0.8rem;
-  margin-bottom: 1rem;
-  border-radius: 14px;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.7rem;
+  border-radius: 12px;
   border: 1px solid rgba(148, 163, 184, 0.14);
   background: rgba(15, 23, 42, 0.54);
-  backdrop-filter: blur(10px);
+  font-size: 0.85rem;
 }
 
 .status-banner strong {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .status-banner span {
@@ -161,54 +177,56 @@ label span,
   background: rgba(14, 116, 144, 0.16);
 }
 
+/* ── Panel ─────────────────────────────────────── */
+
 .panel {
-  padding: 1rem;
-  border-radius: 18px;
+  padding: 0.85rem;
+  border-radius: 16px;
   background: rgba(13, 21, 38, 0.62);
   border: 1px solid rgba(148, 163, 184, 0.1);
   backdrop-filter: blur(14px);
 }
 
+/* ── Control View (Main Page) ─────────────────── */
+
 .control-view {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 1rem;
 }
 
 .hero-panel {
-  min-height: 100%;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02)),
     linear-gradient(135deg, rgba(30, 64, 175, 0.18), rgba(14, 165, 233, 0.08));
 }
 
-.hero-head,
-.panel-header {
+.hero-head {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  align-items: center;
+  margin-bottom: 0.7rem;
 }
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.9rem;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 0.7rem;
 }
 
 .climate-stage {
   display: grid;
-  gap: 0.8rem;
+  gap: 0.6rem;
   align-content: start;
 }
+
+/* ── Temperature Ring ──────────────────────────── */
 
 .temperature-ring {
   display: grid;
   place-items: center;
   position: relative;
-  min-height: 220px;
-  border-radius: 22px;
+  height: 200px;
+  border-radius: 18px;
   background:
     radial-gradient(circle at 50% 48%, rgba(96, 165, 250, 0.26), transparent 42%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.02));
@@ -223,29 +241,29 @@ label span,
 }
 
 .orbit-one {
-  width: 210px;
-  height: 210px;
+  width: 190px;
+  height: 190px;
 }
 
 .orbit-two {
-  width: 164px;
-  height: 164px;
+  width: 148px;
+  height: 148px;
   border-color: rgba(96, 165, 250, 0.24);
 }
 
 .temperature-core {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.3rem;
   place-items: center;
-  width: 170px;
-  height: 170px;
+  width: 152px;
+  height: 152px;
   border-radius: 999px;
   background:
     radial-gradient(circle at top, rgba(59, 130, 246, 0.3), transparent 38%),
     linear-gradient(180deg, rgba(12, 20, 36, 0.98), rgba(8, 15, 28, 0.96));
   box-shadow:
     inset 0 0 0 1px rgba(148, 163, 184, 0.12),
-    0 22px 56px rgba(2, 6, 23, 0.42);
+    0 16px 40px rgba(2, 6, 23, 0.42);
   position: relative;
   z-index: 1;
 }
@@ -253,62 +271,39 @@ label span,
 .temperature-core span,
 .temperature-core small {
   color: #98a8bf;
+  font-size: 0.78rem;
 }
 
 .temperature-core strong {
-  font-size: 2rem;
+  font-size: 1.75rem;
   line-height: 1;
 }
 
-.main-control-row,
-.delta-controls,
-.actions-row,
-.config-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.main-control-row {
-  margin-top: -0.15rem;
-}
+/* ── Action Buttons ────────────────────────────── */
 
 .unified-control-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
-}
-
-.pill-button {
-  min-width: 132px;
-}
-
-.power-button {
-  min-width: 132px;
+  gap: 0.55rem;
 }
 
 .equal-action-button {
   width: 100%;
   min-width: 0;
+  font-size: 0.88rem;
+  padding: 0.6rem 0.5rem;
 }
 
-.power-on {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: none;
+.step-hint {
+  color: #93a4be;
+  font-size: 0.82rem;
 }
 
-.power-off {
-  background: rgba(255, 255, 255, 0.08);
-  color: #eef4ff;
-}
-
-.compact-delta-controls .pill-button {
-  min-width: 120px;
-}
+/* ── Device Status Stack ───────────────────────── */
 
 .status-stack {
   display: grid;
-  gap: 0.75rem;
+  gap: 0.55rem;
 }
 
 .device-stack {
@@ -318,9 +313,9 @@ label span,
 .device-summary-card,
 .device-mini-card {
   display: grid;
-  gap: 0.28rem;
-  padding: 0.95rem 1rem;
-  border-radius: 16px;
+  gap: 0.2rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.055);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -328,30 +323,22 @@ label span,
 .device-summary-card span,
 .device-mini-card span {
   color: #94a3b8;
-  font-size: 0.84rem;
+  font-size: 0.78rem;
 }
 
 .device-summary-card strong,
 .device-mini-card strong {
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
 .device-summary-card.emphasized {
   background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(37, 99, 235, 0.2));
 }
 
-.power-state-card strong {
-  color: #f8fafc;
-}
-
-.temp-state-card strong {
-  color: #dbeafe;
-}
-
 .device-mini-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.6rem;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
 }
 
 .compact-entity {
@@ -363,76 +350,67 @@ label span,
 }
 
 .compact-entity strong {
-  font-size: 0.92rem;
+  font-size: 0.85rem;
 }
 
-.step-hint {
-  color: #93a4be;
-  font-size: 0.92rem;
-}
-
-.step-inline {
-  margin-top: -0.15rem;
-}
+/* ── Config Page ───────────────────────────────── */
 
 .config-shell {
   max-width: 100%;
 }
 
-.config-header {
-  margin-bottom: 1.25rem;
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
 }
 
 .config-form {
   display: grid;
-  gap: 1rem;
+  gap: 0.7rem;
 }
 
 .settings-section {
   display: grid;
-  gap: 0.75rem;
-  padding: 0.9rem;
-  border-radius: 16px;
+  gap: 0.6rem;
+  padding: 0.75rem;
+  border-radius: 14px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .settings-head {
   display: grid;
-  gap: 0.2rem;
+  gap: 0.15rem;
 }
 
 .settings-head h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 
 .settings-grid {
   display: grid;
-  gap: 0.85rem;
+  gap: 0.6rem;
 }
 
 .single-column {
   grid-template-columns: 1fr;
 }
 
-.field-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.85rem;
-}
-
 .checkbox-grid {
   display: grid;
-  gap: 0.65rem;
+  gap: 0.5rem;
 }
 
 .checkbox-row {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
-  border-radius: 16px;
+  gap: 0.65rem;
+  padding: 0.7rem;
+  border-radius: 14px;
   background: rgba(7, 13, 24, 0.34);
 }
 
@@ -442,54 +420,12 @@ label span,
 
 label {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.35rem;
 }
 
-@media (max-width: 920px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    border-right: 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.1);
-  }
-
-  .content-shell,
-  .sidebar {
-    padding: 1rem;
-  }
-}
-
-@media (max-width: 680px) {
-  .temperature-ring {
-    min-height: 260px;
-  }
-
-  .orbit-one {
-    width: 240px;
-    height: 240px;
-  }
-
-  .orbit-two {
-    width: 188px;
-    height: 188px;
-  }
-
-  .temperature-core {
-    width: 196px;
-    height: 196px;
-  }
-
-  .main-control-row,
-  .delta-controls,
-  .actions-row,
-  .config-actions {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .unified-control-row {
-    grid-template-columns: 1fr;
-  }
+.actions-row,
+.config-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
 }

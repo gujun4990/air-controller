@@ -303,16 +303,6 @@ fn parse_double(value: Option<&Value>) -> Option<f64> {
     value
         .as_f64()
         .or_else(|| value.as_str().and_then(|text| text.parse::<f64>().ok()))
-        .or_else(|| {
-            value
-                .get("target_temp_high")
-                .and_then(|item| parse_double(Some(item)))
-                .or_else(|| {
-                    value
-                        .get("target_temp_low")
-                        .and_then(|item| parse_double(Some(item)))
-                })
-        })
 }
 
 fn parse_entity_target_temperature(attributes: &Value) -> Option<f64> {

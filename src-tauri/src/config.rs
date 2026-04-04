@@ -165,8 +165,10 @@ impl ConfigStore {
             return Err("baseUrl 不能为空。".into());
         }
 
-        if reqwest::Url::parse(&config.base_url).is_err() {
-            return Err("baseUrl 不是有效地址。".into());
+        match reqwest::Url::parse(&config.base_url) {
+            Ok(url) if url.scheme() == "http" || url.scheme() == "https" => {}
+            Ok(_) => return Err("baseUrl 仅支持 http 或 https 协议。".into()),
+            Err(_) => return Err("baseUrl 不是有效地址。".into()),
         }
 
         if !config.climate_entity_id.starts_with("climate.") {

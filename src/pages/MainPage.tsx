@@ -23,11 +23,10 @@ export default function MainPage({
   onTurnOff,
   onChangeTemperature
 }: Props) {
-  const runtimeStep = state?.temperatureStep ?? config.temperatureStep;
+  const STEP_CELSIUS = 1;
   const canAdjustTemperature = Boolean(
     state?.isAvailable &&
       state?.isOn &&
-      runtimeStep > 0 &&
       state?.targetTemperature !== null &&
       state?.minTemperature !== null &&
       state?.maxTemperature !== null
@@ -65,16 +64,16 @@ export default function MainPage({
               <button className="power-button power-off equal-action-button" disabled={busy} onClick={() => void onTurnOff()}>
                 关机
               </button>
-              <button className="secondary pill-button equal-action-button" disabled={busy || !canAdjustTemperature} onClick={() => void onChangeTemperature(-runtimeStep)}>
+              <button className="secondary pill-button equal-action-button" disabled={busy || !canAdjustTemperature} onClick={() => void onChangeTemperature(-STEP_CELSIUS)}>
                 温度 -
               </button>
-              <button className="secondary pill-button equal-action-button" disabled={busy || !canAdjustTemperature} onClick={() => void onChangeTemperature(runtimeStep)}>
+              <button className="secondary pill-button equal-action-button" disabled={busy || !canAdjustTemperature} onClick={() => void onChangeTemperature(STEP_CELSIUS)}>
                 温度 +
               </button>
             </div>
 
             <div className="step-hint step-inline">
-              {canAdjustTemperature ? `每次调节步长：${runtimeStep.toFixed(1)} °C` : "请先刷新状态并确保空调已开机"}
+              {canAdjustTemperature ? `每次调节步长：${STEP_CELSIUS} °C` : "请先刷新状态并确保空调已开机"}
             </div>
           </div>
 

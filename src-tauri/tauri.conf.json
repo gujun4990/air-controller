@@ -13,11 +13,11 @@
     "windows": [
       {
         "title": "AirController",
-        "width": 820,
-        "height": 580,
+        "width": 780,
+        "height": 540,
         "resizable": false,
-        "minWidth": 720,
-        "minHeight": 520
+        "minWidth": 780,
+        "minHeight": 540
       }
     ],
     "security": {

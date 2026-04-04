@@ -1,10 +1,8 @@
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
-import { open, save } from "@tauri-apps/plugin-dialog";
 import MainPage from "../pages/MainPage";
 import ConfigPage from "../pages/ConfigPage";
 import {
-  exportConfig,
   getConfig,
   getLaunchOnStartup,
   hasToken as checkToken,
@@ -171,28 +169,6 @@ export default function App() {
     }
   }
 
-  async function handleExportConfig() {
-    const selected = await save({
-      filters: [{ name: "JSON", extensions: ["json"] }],
-      title: "导出配置",
-      defaultPath: "air-controller.config.json"
-    });
-
-    if (!selected) {
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const result = await exportConfig(selected);
-      setStatus({ tone: result.success ? "success" : "error", text: result.message });
-    } catch (error) {
-      setStatus({ tone: "error", text: `导出配置失败: ${String(error)}` });
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -246,23 +222,12 @@ export default function App() {
   );
 }
 
+const STEP_CELSIUS = 1;
+
 function clampTemperature(value: number, config: AppConfig, climateState: ClimateState | null) {
-  const runtimeMin = climateRuntimeMin(climateState, config);
-  const runtimeMax = climateRuntimeMax(climateState, config);
-  const step = climateRuntimeStep(climateState, config);
+  const runtimeMin = climateState?.minTemperature ?? config.minTemperature;
+  const runtimeMax = climateState?.maxTemperature ?? config.maxTemperature;
   const bounded = Math.min(runtimeMax, Math.max(runtimeMin, value));
-  const normalized = Math.round(bounded / step) * step;
+  const normalized = Math.round(bounded / STEP_CELSIUS) * STEP_CELSIUS;
   return Number(normalized.toFixed(1));
-}
-
-function climateRuntimeMin(climateState: ClimateState | null, config: AppConfig) {
-  return climateState?.minTemperature ?? config.minTemperature;
-}
-
-function climateRuntimeMax(climateState: ClimateState | null, config: AppConfig) {
-  return climateState?.maxTemperature ?? config.maxTemperature;
-}
-
-function climateRuntimeStep(climateState: ClimateState | null, config: AppConfig) {
-  return climateState?.temperatureStep ?? config.temperatureStep ?? 1;
 }
