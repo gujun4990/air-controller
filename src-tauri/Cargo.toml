@@ -1,0 +1,25 @@
+[package]
+name = "air-controller"
+version = "0.1.0"
+description = "Cross-platform Home Assistant air controller"
+authors = ["OpenCode"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "2.0.3", features = [] }
+
+[dependencies]
+auto-launch = "0.5.0"
+directories = "5.0.1"
+keyring = { version = "3.6.1", features = ["apple-native", "windows-native", "sync-secret-service"] }
+reqwest = { version = "0.12.9", default-features = false, features = ["json", "rustls-tls"] }
+serde = { version = "1.0.214", features = ["derive"] }
+serde_json = "1.0.132"
+tauri = { version = "2.1.1", features = ["tray-icon"] }
+tauri-plugin-dialog = "2.0.1"
+tauri-plugin-opener = "2.5.3"
+tokio = { version = "1.41.1", features = ["macros", "rt-multi-thread", "time"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
