@@ -237,7 +237,6 @@ export default function App() {
             busy={busy}
             config={config}
             hasToken={hasToken}
-            onExportConfig={handleExportConfig}
             onSaveConfig={handleSaveConfig}
             onSaveToken={handleSaveToken}
           />

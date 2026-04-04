@@ -24,60 +24,73 @@ export default function MainPage({
   onChangeTemperature
 }: Props) {
   return (
-    <section className="panel">
-      <div className="panel-header compact-header">
-        <h2>空调控制</h2>
-      </div>
-
-      <div className="overview-row">
-        <div className="summary-strip">
-          <div className="summary-item">
-            <span>连接</span>
-            <strong>{state ? (state.isAvailable ? "已连接" : "不可用") : "未连接"}</strong>
+    <section className="control-view">
+      <div className="hero-panel panel">
+        <div className="hero-head">
+          <div>
+            <span className="eyebrow">DEVICE CONTROL</span>
+            <h2>空调控制</h2>
           </div>
-          <div className="summary-item">
-            <span>电源</span>
-            <strong>{state ? (state.isOn ? "已开机" : "已关机") : "未知"}</strong>
-          </div>
-          <div className="summary-item summary-item-wide">
-            <span>实体</span>
-            <strong>{config.climateEntityId || "-"}</strong>
-          </div>
+          <button className="ghost" disabled={busy} onClick={() => void onRefresh()}>
+            刷新
+          </button>
         </div>
 
-        <div className="temperature-panel">
-          <div className="temperature-readings">
-            <div className="temperature-tile">
-              <span>当前</span>
-              <strong>{formatTemperature(state?.currentTemperature ?? null)}</strong>
+        <div className="hero-grid">
+          <div className="climate-stage">
+            <div className="temperature-ring">
+              <div className="ring-orbit orbit-one" />
+              <div className="ring-orbit orbit-two" />
+              <div className="temperature-core">
+                <span>目标温度</span>
+                <strong>{formatTemperature(state?.targetTemperature ?? null)}</strong>
+                <small>摄氏度</small>
+              </div>
             </div>
-            <div className="temperature-tile primary">
-              <span>目标</span>
-              <strong>{formatTemperature(state?.targetTemperature ?? null)}</strong>
+
+            <div className="main-control-row">
+              <button className="power-button power-on" disabled={busy} onClick={() => void onTurnOn()}>
+                开机
+              </button>
+              <button className="power-button power-off" disabled={busy} onClick={() => void onTurnOff()}>
+                关机
+              </button>
             </div>
+
+            <div className="delta-controls compact-delta-controls">
+              <button className="secondary pill-button" disabled={busy} onClick={() => void onChangeTemperature(-config.temperatureStep)}>
+                温度 -
+              </button>
+              <button className="secondary pill-button" disabled={busy} onClick={() => void onChangeTemperature(config.temperatureStep)}>
+                温度 +
+              </button>
+            </div>
+
+            <div className="step-hint step-inline">每次调节步长：{config.temperatureStep.toFixed(1)} °C</div>
           </div>
 
-          <div className="actions-row">
-            <button className="secondary" disabled={busy} onClick={() => void onChangeTemperature(-config.temperatureStep)}>
-              温度 -
-            </button>
-            <button className="secondary" disabled={busy} onClick={() => void onChangeTemperature(config.temperatureStep)}>
-              温度 +
-            </button>
+          <div className="status-stack device-stack">
+            <div className="device-summary-card emphasized">
+              <span>连接</span>
+              <strong>{state ? (state.isAvailable ? "已连接" : "不可用") : "未连接"}</strong>
+            </div>
+
+            <div className="device-mini-grid">
+              <div className="device-mini-card power-state-card">
+                <span>电源</span>
+                <strong>{state ? (state.isOn ? "已开机" : "已关机") : "未知"}</strong>
+              </div>
+              <div className="device-mini-card temp-state-card">
+                <span>当前温度</span>
+                <strong>{formatTemperature(state?.currentTemperature ?? null)}</strong>
+              </div>
+              <div className="device-mini-card entity-card compact-entity">
+                <span>实体</span>
+                <strong>{config.climateEntityId || "-"}</strong>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="actions-row">
-        <button disabled={busy} onClick={() => void onTurnOn()}>
-          开机
-        </button>
-        <button className="secondary" disabled={busy} onClick={() => void onTurnOff()}>
-          关机
-        </button>
-        <button className="ghost" disabled={busy} onClick={() => void onRefresh()}>
-          刷新
-        </button>
       </div>
     </section>
   );

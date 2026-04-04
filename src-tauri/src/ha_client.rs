@@ -4,6 +4,18 @@ use tokio::time::{sleep, Duration};
 
 use crate::models::{AppConfig, ClimateState, ServiceResult};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum TemperatureUnit {
+    Celsius,
+    Fahrenheit,
+    Unknown,
+}
+
+struct ClimateSnapshot {
+    state: ClimateState,
+    temperature_unit: TemperatureUnit,
+}
+
 pub struct HomeAssistantClient {
     config: AppConfig,
     client: Client,
@@ -53,6 +65,13 @@ impl HomeAssistantClient {
     }
 
     pub async fn get_state(&self) -> ServiceResult<ClimateState> {
+        match self.get_state_snapshot().await {
+            Ok(snapshot) => ServiceResult::ok("状态已刷新。", snapshot.state),
+            Err(message) => ServiceResult::fail(message),
+        }
+    }
+
+    async fn get_state_snapshot(&self) -> Result<ClimateSnapshot, String> {
         let url = format!(
             "{}/api/states/{}",
             self.config.base_url.trim_end_matches('/'),
@@ -60,17 +79,17 @@ impl HomeAssistantClient {
         );
         let response = match self.client.get(url).send().await {
             Ok(response) => response,
-            Err(error) => return ServiceResult::fail(format!("连接 Home Assistant 失败: {error}")),
+            Err(error) => return Err(format!("连接 Home Assistant 失败: {error}")),
         };
 
         let status = response.status();
         let body = match response.text().await {
             Ok(body) => body,
-            Err(error) => return ServiceResult::fail(format!("读取响应失败: {error}")),
+            Err(error) => return Err(format!("读取响应失败: {error}")),
         };
 
         if !status.is_success() {
-            return ServiceResult::fail(describe_http_failure(
+            return Err(describe_http_failure(
                 "获取空调状态失败",
                 status.as_u16(),
                 &body,
@@ -79,7 +98,7 @@ impl HomeAssistantClient {
 
         let value = match serde_json::from_str::<Value>(&body) {
             Ok(value) => value,
-            Err(error) => return ServiceResult::fail(format!("解析状态失败: {error}")),
+            Err(error) => return Err(format!("解析状态失败: {error}")),
         };
 
         let attributes = value
@@ -91,6 +110,7 @@ impl HomeAssistantClient {
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_string();
+        let temperature_unit = parse_temperature_unit(attributes.get("temperature_unit"));
         let climate_state = ClimateState {
             entity_id: value
                 .get("entity_id")
@@ -108,13 +128,19 @@ impl HomeAssistantClient {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .to_string(),
-            current_temperature: parse_double(attributes.get("current_temperature")),
-            target_temperature: parse_double(attributes.get("temperature")),
+            current_temperature: parse_temperature(
+                attributes.get("current_temperature"),
+                temperature_unit,
+            ),
+            target_temperature: parse_temperature(attributes.get("temperature"), temperature_unit),
             is_available: !state_text.eq_ignore_ascii_case("unavailable"),
             is_on: !matches!(state_text.as_str(), "off" | "unavailable"),
         };
 
-        ServiceResult::ok("状态已刷新。", climate_state)
+        Ok(ClimateSnapshot {
+            state: climate_state,
+            temperature_unit,
+        })
     }
 
     pub async fn turn_on(&self) -> ServiceResult<ClimateState> {
@@ -134,16 +160,17 @@ impl HomeAssistantClient {
     }
 
     pub async fn set_temperature(&self, temperature: f64) -> ServiceResult<ClimateState> {
-        let current_state = self.get_state().await.data;
+        let snapshot = match self.get_state_snapshot().await {
+            Ok(snapshot) => snapshot,
+            Err(message) => return ServiceResult::fail(message),
+        };
         let mut payload = json!({
             "entity_id": self.config.climate_entity_id,
-            "temperature": temperature
+            "temperature": convert_celsius_to_entity_unit(temperature, snapshot.temperature_unit)
         });
 
-        if let Some(state) = current_state {
-            if !state.hvac_mode.is_empty() && state.hvac_mode != "off" {
-                payload["hvac_mode"] = Value::String(state.hvac_mode);
-            }
+        if !snapshot.state.hvac_mode.is_empty() && snapshot.state.hvac_mode != "off" {
+            payload["hvac_mode"] = Value::String(snapshot.state.hvac_mode);
         }
 
         let service_result = self.post_service_raw("set_temperature", payload).await;
@@ -226,6 +253,14 @@ impl HomeAssistantClient {
     }
 }
 
+fn parse_temperature(value: Option<&Value>, unit: TemperatureUnit) -> Option<f64> {
+    let raw = parse_double(value)?;
+    Some(match unit {
+        TemperatureUnit::Fahrenheit => fahrenheit_to_celsius(raw),
+        TemperatureUnit::Celsius | TemperatureUnit::Unknown => raw,
+    })
+}
+
 fn parse_double(value: Option<&Value>) -> Option<f64> {
     let value = value?;
     value
@@ -241,6 +276,36 @@ fn parse_double(value: Option<&Value>) -> Option<f64> {
                         .and_then(|item| parse_double(Some(item)))
                 })
         })
+}
+
+fn parse_temperature_unit(value: Option<&Value>) -> TemperatureUnit {
+    match value
+        .and_then(Value::as_str)
+        .map(|item| item.trim().to_ascii_uppercase())
+    {
+        Some(unit) if unit == "F" || unit == "°F" => TemperatureUnit::Fahrenheit,
+        Some(unit) if unit == "C" || unit == "°C" => TemperatureUnit::Celsius,
+        _ => TemperatureUnit::Unknown,
+    }
+}
+
+fn convert_celsius_to_entity_unit(value: f64, unit: TemperatureUnit) -> f64 {
+    match unit {
+        TemperatureUnit::Fahrenheit => celsius_to_fahrenheit(value),
+        TemperatureUnit::Celsius | TemperatureUnit::Unknown => value,
+    }
+}
+
+fn fahrenheit_to_celsius(value: f64) -> f64 {
+    round_one_decimal((value - 32.0) * 5.0 / 9.0)
+}
+
+fn celsius_to_fahrenheit(value: f64) -> f64 {
+    round_one_decimal((value * 9.0 / 5.0) + 32.0)
+}
+
+fn round_one_decimal(value: f64) -> f64 {
+    (value * 10.0).round() / 10.0
 }
 
 fn describe_http_failure(prefix: &str, status: u16, body: &str) -> String {
