@@ -14,6 +14,9 @@ enum TemperatureUnit {
 struct ClimateSnapshot {
     state: ClimateState,
     temperature_unit: TemperatureUnit,
+    entity_min_temperature: Option<f64>,
+    entity_max_temperature: Option<f64>,
+    entity_temperature_step: Option<f64>,
 }
 
 pub struct HomeAssistantClient {
@@ -110,7 +113,17 @@ impl HomeAssistantClient {
             .and_then(Value::as_str)
             .unwrap_or_default()
             .to_string();
-        let temperature_unit = parse_temperature_unit(attributes.get("temperature_unit"));
+        let entity_target_temperature = parse_entity_target_temperature(&attributes);
+        let entity_min_temperature = parse_double(attributes.get("min_temp"));
+        let entity_max_temperature = parse_double(attributes.get("max_temp"));
+        let entity_temperature_step = parse_double(attributes.get("target_temp_step"));
+        let temperature_unit = parse_temperature_unit(
+            attributes.get("temperature_unit"),
+            entity_target_temperature,
+            entity_min_temperature,
+            entity_max_temperature,
+            parse_double(attributes.get("current_temperature")),
+        );
         let climate_state = ClimateState {
             entity_id: value
                 .get("entity_id")
@@ -128,15 +141,18 @@ impl HomeAssistantClient {
                 .and_then(Value::as_str)
                 .unwrap_or_default()
                 .to_string(),
-            current_temperature: parse_temperature(
-                attributes.get("current_temperature"),
+            current_temperature: convert_entity_temperature(
+                parse_double(attributes.get("current_temperature")),
                 temperature_unit,
             ),
-            target_temperature: parse_temperature(attributes.get("temperature"), temperature_unit),
-            min_temperature: parse_temperature(attributes.get("min_temp"), temperature_unit),
-            max_temperature: parse_temperature(attributes.get("max_temp"), temperature_unit),
-            temperature_step: parse_temperature_step(
-                attributes.get("target_temp_step"),
+            target_temperature: convert_entity_temperature(
+                entity_target_temperature,
+                temperature_unit,
+            ),
+            min_temperature: convert_entity_temperature(entity_min_temperature, temperature_unit),
+            max_temperature: convert_entity_temperature(entity_max_temperature, temperature_unit),
+            temperature_step: convert_entity_temperature_step(
+                entity_temperature_step,
                 temperature_unit,
             ),
             is_available: !state_text.eq_ignore_ascii_case("unavailable"),
@@ -146,6 +162,9 @@ impl HomeAssistantClient {
         Ok(ClimateSnapshot {
             state: climate_state,
             temperature_unit,
+            entity_min_temperature,
+            entity_max_temperature,
+            entity_temperature_step,
         })
     }
 
@@ -170,9 +189,10 @@ impl HomeAssistantClient {
             Ok(snapshot) => snapshot,
             Err(message) => return ServiceResult::fail(message),
         };
+        let entity_temperature = normalize_entity_temperature(temperature, &snapshot);
         let mut payload = json!({
             "entity_id": self.config.climate_entity_id,
-            "temperature": convert_celsius_to_entity_unit(temperature, snapshot.temperature_unit)
+            "temperature": entity_temperature
         });
 
         if !snapshot.state.hvac_mode.is_empty() && snapshot.state.hvac_mode != "off" {
@@ -184,7 +204,10 @@ impl HomeAssistantClient {
             return ServiceResult::fail(service_result.message);
         }
 
-        self.wait_for_target_temperature(temperature).await
+        let expected_celsius =
+            convert_entity_temperature(Some(entity_temperature), snapshot.temperature_unit)
+                .unwrap_or(temperature);
+        self.wait_for_target_temperature(expected_celsius).await
     }
 
     async fn post_service(&self, action: &str, payload: Value) -> ServiceResult<ClimateState> {
@@ -259,16 +282,16 @@ impl HomeAssistantClient {
     }
 }
 
-fn parse_temperature(value: Option<&Value>, unit: TemperatureUnit) -> Option<f64> {
-    let raw = parse_double(value)?;
+fn convert_entity_temperature(value: Option<f64>, unit: TemperatureUnit) -> Option<f64> {
+    let raw = value?;
     Some(match unit {
         TemperatureUnit::Fahrenheit => fahrenheit_to_celsius(raw),
         TemperatureUnit::Celsius | TemperatureUnit::Unknown => raw,
     })
 }
 
-fn parse_temperature_step(value: Option<&Value>, unit: TemperatureUnit) -> Option<f64> {
-    let raw = parse_double(value)?;
+fn convert_entity_temperature_step(value: Option<f64>, unit: TemperatureUnit) -> Option<f64> {
+    let raw = value?;
     Some(match unit {
         TemperatureUnit::Fahrenheit => round_one_decimal(raw * 5.0 / 9.0),
         TemperatureUnit::Celsius | TemperatureUnit::Unknown => raw,
@@ -292,15 +315,59 @@ fn parse_double(value: Option<&Value>) -> Option<f64> {
         })
 }
 
-fn parse_temperature_unit(value: Option<&Value>) -> TemperatureUnit {
+fn parse_entity_target_temperature(attributes: &Value) -> Option<f64> {
+    parse_double(attributes.get("temperature"))
+        .or_else(|| parse_double(attributes.get("target_temp_high")))
+        .or_else(|| parse_double(attributes.get("target_temp_low")))
+}
+
+fn parse_temperature_unit(
+    value: Option<&Value>,
+    target_temperature: Option<f64>,
+    min_temperature: Option<f64>,
+    max_temperature: Option<f64>,
+    current_temperature: Option<f64>,
+) -> TemperatureUnit {
     match value
         .and_then(Value::as_str)
         .map(|item| item.trim().to_ascii_uppercase())
     {
         Some(unit) if unit == "F" || unit == "°F" => TemperatureUnit::Fahrenheit,
         Some(unit) if unit == "C" || unit == "°C" => TemperatureUnit::Celsius,
-        _ => TemperatureUnit::Unknown,
+        _ => infer_temperature_unit(
+            target_temperature,
+            min_temperature,
+            max_temperature,
+            current_temperature,
+        ),
     }
+}
+
+fn infer_temperature_unit(
+    target_temperature: Option<f64>,
+    min_temperature: Option<f64>,
+    max_temperature: Option<f64>,
+    current_temperature: Option<f64>,
+) -> TemperatureUnit {
+    let candidates = [
+        target_temperature,
+        min_temperature,
+        max_temperature,
+        current_temperature,
+    ];
+
+    if candidates.into_iter().flatten().any(|value| value > 45.0) {
+        return TemperatureUnit::Fahrenheit;
+    }
+
+    if min_temperature
+        .zip(max_temperature)
+        .is_some_and(|(min, max)| min >= 8.0 && max <= 40.0)
+    {
+        return TemperatureUnit::Celsius;
+    }
+
+    TemperatureUnit::Unknown
 }
 
 fn convert_celsius_to_entity_unit(value: f64, unit: TemperatureUnit) -> f64 {
@@ -308,6 +375,25 @@ fn convert_celsius_to_entity_unit(value: f64, unit: TemperatureUnit) -> f64 {
         TemperatureUnit::Fahrenheit => celsius_to_fahrenheit(value),
         TemperatureUnit::Celsius | TemperatureUnit::Unknown => value,
     }
+}
+
+fn normalize_entity_temperature(value_celsius: f64, snapshot: &ClimateSnapshot) -> f64 {
+    let mut value = convert_celsius_to_entity_unit(value_celsius, snapshot.temperature_unit);
+
+    if let Some(minimum) = snapshot.entity_min_temperature {
+        value = value.max(minimum);
+    }
+
+    if let Some(maximum) = snapshot.entity_max_temperature {
+        value = value.min(maximum);
+    }
+
+    if let Some(step) = snapshot.entity_temperature_step.filter(|step| *step > 0.0) {
+        let anchor = snapshot.entity_min_temperature.unwrap_or(0.0);
+        value = anchor + ((value - anchor) / step).round() * step;
+    }
+
+    round_one_decimal(value)
 }
 
 fn fahrenheit_to_celsius(value: f64) -> f64 {

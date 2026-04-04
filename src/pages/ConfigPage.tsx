@@ -70,7 +70,7 @@ export default function ConfigPage({
             </label>
 
             <label>
-              <span>空调实体 ID</span>
+              <span>空调ID</span>
               <input value={draft.climateEntityId} onChange={(event) => update("climateEntityId", event.target.value)} />
             </label>
 
