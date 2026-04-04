@@ -273,12 +273,23 @@ label span,
   margin-top: -0.15rem;
 }
 
+.unified-control-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
 .pill-button {
   min-width: 132px;
 }
 
 .power-button {
   min-width: 132px;
+}
+
+.equal-action-button {
+  width: 100%;
+  min-width: 0;
 }
 
 .power-on {
@@ -480,6 +491,10 @@ label {
   .actions-row,
   .config-actions {
     display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .unified-control-row {
     grid-template-columns: 1fr;
   }
 }

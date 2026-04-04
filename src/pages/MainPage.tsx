@@ -23,6 +23,8 @@ export default function MainPage({
   onTurnOff,
   onChangeTemperature
 }: Props) {
+  const runtimeStep = state?.temperatureStep ?? config.temperatureStep;
+
   return (
     <section className="control-view">
       <div className="hero-panel panel">
@@ -48,25 +50,22 @@ export default function MainPage({
               </div>
             </div>
 
-            <div className="main-control-row">
-              <button className="power-button power-on" disabled={busy} onClick={() => void onTurnOn()}>
+            <div className="main-control-row unified-control-row">
+              <button className="power-button power-on equal-action-button" disabled={busy} onClick={() => void onTurnOn()}>
                 开机
               </button>
-              <button className="power-button power-off" disabled={busy} onClick={() => void onTurnOff()}>
+              <button className="power-button power-off equal-action-button" disabled={busy} onClick={() => void onTurnOff()}>
                 关机
               </button>
-            </div>
-
-            <div className="delta-controls compact-delta-controls">
-              <button className="secondary pill-button" disabled={busy} onClick={() => void onChangeTemperature(-config.temperatureStep)}>
+              <button className="secondary pill-button equal-action-button" disabled={busy} onClick={() => void onChangeTemperature(-runtimeStep)}>
                 温度 -
               </button>
-              <button className="secondary pill-button" disabled={busy} onClick={() => void onChangeTemperature(config.temperatureStep)}>
+              <button className="secondary pill-button equal-action-button" disabled={busy} onClick={() => void onChangeTemperature(runtimeStep)}>
                 温度 +
               </button>
             </div>
 
-            <div className="step-hint step-inline">每次调节步长：{config.temperatureStep.toFixed(1)} °C</div>
+            <div className="step-hint step-inline">每次调节步长：{runtimeStep.toFixed(1)} °C</div>
           </div>
 
           <div className="status-stack device-stack">

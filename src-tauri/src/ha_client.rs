@@ -133,6 +133,12 @@ impl HomeAssistantClient {
                 temperature_unit,
             ),
             target_temperature: parse_temperature(attributes.get("temperature"), temperature_unit),
+            min_temperature: parse_temperature(attributes.get("min_temp"), temperature_unit),
+            max_temperature: parse_temperature(attributes.get("max_temp"), temperature_unit),
+            temperature_step: parse_temperature_step(
+                attributes.get("target_temp_step"),
+                temperature_unit,
+            ),
             is_available: !state_text.eq_ignore_ascii_case("unavailable"),
             is_on: !matches!(state_text.as_str(), "off" | "unavailable"),
         };
@@ -257,6 +263,14 @@ fn parse_temperature(value: Option<&Value>, unit: TemperatureUnit) -> Option<f64
     let raw = parse_double(value)?;
     Some(match unit {
         TemperatureUnit::Fahrenheit => fahrenheit_to_celsius(raw),
+        TemperatureUnit::Celsius | TemperatureUnit::Unknown => raw,
+    })
+}
+
+fn parse_temperature_step(value: Option<&Value>, unit: TemperatureUnit) -> Option<f64> {
+    let raw = parse_double(value)?;
+    Some(match unit {
+        TemperatureUnit::Fahrenheit => round_one_decimal(raw * 5.0 / 9.0),
         TemperatureUnit::Celsius | TemperatureUnit::Unknown => raw,
     })
 }

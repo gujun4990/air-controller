@@ -123,7 +123,7 @@ export default function App() {
 
   async function handleChangeTemperature(delta: number) {
     const base = climateState?.targetTemperature ?? config.defaultTemperature;
-    const next = clampTemperature(base + delta, config);
+    const next = clampTemperature(base + delta, config, climateState);
     await runClimateAction(() => setTemperature(next));
   }
 
@@ -246,9 +246,23 @@ export default function App() {
   );
 }
 
-function clampTemperature(value: number, config: AppConfig) {
-  const bounded = Math.min(config.maxTemperature, Math.max(config.minTemperature, value));
-  const step = config.temperatureStep || 1;
+function clampTemperature(value: number, config: AppConfig, climateState: ClimateState | null) {
+  const runtimeMin = climateRuntimeMin(climateState, config);
+  const runtimeMax = climateRuntimeMax(climateState, config);
+  const step = climateRuntimeStep(climateState, config);
+  const bounded = Math.min(runtimeMax, Math.max(runtimeMin, value));
   const normalized = Math.round(bounded / step) * step;
   return Number(normalized.toFixed(1));
+}
+
+function climateRuntimeMin(climateState: ClimateState | null, config: AppConfig) {
+  return climateState?.minTemperature ?? config.minTemperature;
+}
+
+function climateRuntimeMax(climateState: ClimateState | null, config: AppConfig) {
+  return climateState?.maxTemperature ?? config.maxTemperature;
+}
+
+function climateRuntimeStep(climateState: ClimateState | null, config: AppConfig) {
+  return climateState?.temperatureStep ?? config.temperatureStep ?? 1;
 }

@@ -41,6 +41,9 @@ pub struct ClimateState {
     pub hvac_action: String,
     pub current_temperature: Option<f64>,
     pub target_temperature: Option<f64>,
+    pub min_temperature: Option<f64>,
+    pub max_temperature: Option<f64>,
+    pub temperature_step: Option<f64>,
     pub is_available: bool,
     pub is_on: bool,
 }

@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use tauri::Emitter;
+
 mod auto_power_on;
 mod commands;
 mod config;
@@ -14,6 +16,10 @@ pub fn run() {
     tauri::Builder::default()
         .manage(tray::CloseState::default())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+            let _ = tray::show_main_window(app);
+            let _ = app.emit("navigate", "main");
+        }))
         .setup(|app| {
             tray::setup(app)
                 .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;

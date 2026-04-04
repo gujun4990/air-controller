@@ -18,6 +18,9 @@ export type ClimateState = {
   hvacAction: string;
   currentTemperature: number | null;
   targetTemperature: number | null;
+  minTemperature: number | null;
+  maxTemperature: number | null;
+  temperatureStep: number | null;
   isAvailable: boolean;
   isOn: boolean;
 };
