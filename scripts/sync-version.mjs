@@ -16,14 +16,20 @@ if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(nextVersion)) {
 const root = "/opt/air-controller";
 const packageJsonPath = path.join(root, "package.json");
 const tauriConfigPath = path.join(root, "src-tauri", "tauri.conf.json");
+const cargoTomlPath = path.join(root, "src-tauri", "Cargo.toml");
 
 const packageJson = JSON.parse(await fs.readFile(packageJsonPath, "utf8"));
 const tauriConfig = JSON.parse(await fs.readFile(tauriConfigPath, "utf8"));
+const cargoToml = await fs.readFile(cargoTomlPath, "utf8");
 
 packageJson.version = nextVersion;
 tauriConfig.version = nextVersion;
 
 await fs.writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
 await fs.writeFile(tauriConfigPath, `${JSON.stringify(tauriConfig, null, 2)}\n`);
+await fs.writeFile(
+  cargoTomlPath,
+  cargoToml.replace(/version = "[^"]+"/, `version = "${nextVersion}"`)
+);
 
 console.log(`Synced version to ${nextVersion}`);
