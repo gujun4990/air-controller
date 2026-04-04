@@ -46,7 +46,7 @@ impl HomeAssistantClient {
         let response = match self.client.get(url).send().await {
             Ok(response) => response,
             Err(error) => {
-                return ServiceResult::fail(format!("连接 Home Assistant 失败: {error}"));
+                return ServiceResult::fail(format!("连接服务失败: {error}"));
             }
         };
 
@@ -58,13 +58,13 @@ impl HomeAssistantClient {
 
         if !status.is_success() {
             return ServiceResult::fail(describe_http_failure(
-                "连接测试失败",
+                "连接校验失败",
                 status.as_u16(),
                 &body,
             ));
         }
 
-        ServiceResult::ok("Home Assistant 连接正常。", true)
+        ServiceResult::ok("连接成功。", true)
     }
 
     pub async fn get_state(&self) -> ServiceResult<ClimateState> {
@@ -82,7 +82,7 @@ impl HomeAssistantClient {
         );
         let response = match self.client.get(url).send().await {
             Ok(response) => response,
-            Err(error) => return Err(format!("连接 Home Assistant 失败: {error}")),
+            Err(error) => return Err(format!("连接服务失败: {error}")),
         };
 
         let status = response.status();
@@ -227,7 +227,7 @@ impl HomeAssistantClient {
         );
         let response = match self.client.post(url).json(&payload).send().await {
             Ok(response) => response,
-            Err(error) => return ServiceResult::fail(format!("调用 Home Assistant 失败: {error}")),
+            Err(error) => return ServiceResult::fail(format!("调用服务失败: {error}")),
         };
 
         let status = response.status();

@@ -1,5 +1,5 @@
 import { type FormEvent, useEffect, useState } from "react";
-import { defaultConfig, type AppConfig } from "../lib/types";
+import type { AppConfig } from "../lib/types";
 
 type Props = {
   config: AppConfig;
@@ -27,17 +27,20 @@ export default function ConfigPage({
     setDraft((current) => ({ ...current, [key]: value }));
   }
 
+  function handleLaunchOnStartupChange(enabled: boolean) {
+    setDraft((current) => ({
+      ...current,
+      launchOnSystemStartup: enabled,
+      autoPowerOnOnStartup: enabled ? current.autoPowerOnOnStartup : false
+    }));
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const payload: AppConfig = {
       ...draft,
-      startupDelaySeconds: defaultConfig.startupDelaySeconds,
-      retryCount: defaultConfig.retryCount,
-      defaultTemperature: defaultConfig.defaultTemperature,
-      minTemperature: defaultConfig.minTemperature,
-      maxTemperature: defaultConfig.maxTemperature,
-      temperatureStep: defaultConfig.temperatureStep
+      autoPowerOnOnStartup: draft.launchOnSystemStartup && draft.autoPowerOnOnStartup
     };
 
     const saved = await onSaveConfig(payload);
@@ -117,18 +120,19 @@ export default function ConfigPage({
                 <input
                   type="checkbox"
                   checked={draft.launchOnSystemStartup}
-                  onChange={(event) => update("launchOnSystemStartup", event.target.checked)}
+                  onChange={(event) => handleLaunchOnStartupChange(event.target.checked)}
                 />
-                <span>系统登录后自动启动</span>
+                <span>系统登录后自动启动应用</span>
               </label>
 
               <label className="checkbox-row">
                 <input
                   type="checkbox"
                   checked={draft.autoPowerOnOnStartup}
+                  disabled={!draft.launchOnSystemStartup}
                   onChange={(event) => update("autoPowerOnOnStartup", event.target.checked)}
                 />
-                <span>程序启动后自动开空调</span>
+                <span>系统自启动时自动开启空调</span>
               </label>
             </div>
           </section>

@@ -38,6 +38,8 @@ pub fn save_config(config: AppConfig) -> ServiceResult<AppConfig> {
         Err(message) => return ServiceResult::fail(message),
     };
 
+    let previous_config = store.load().data;
+
     let result = store.save(&config);
     if !result.success {
         return result;
@@ -45,6 +47,16 @@ pub fn save_config(config: AppConfig) -> ServiceResult<AppConfig> {
 
     let startup_result = startup::set_launch_on_startup(config.launch_on_system_startup);
     if !startup_result.success {
+        if let Some(previous_config) = previous_config {
+            let rollback_result = store.save(&previous_config);
+            if !rollback_result.success {
+                return ServiceResult::fail(format!(
+                    "{} 配置回滚也失败: {}",
+                    startup_result.message, rollback_result.message
+                ));
+            }
+        }
+
         return ServiceResult::fail(startup_result.message);
     }
 
@@ -112,6 +124,10 @@ pub async fn set_temperature(temperature: f64) -> ServiceResult<ClimateState> {
 
 #[tauri::command]
 pub async fn run_auto_power_on() -> ServiceResult<ClimateState> {
+    run_auto_power_on_internal().await
+}
+
+pub async fn run_auto_power_on_internal() -> ServiceResult<ClimateState> {
     let store = match config_store() {
         Ok(store) => store,
         Err(message) => return ServiceResult::fail(message),

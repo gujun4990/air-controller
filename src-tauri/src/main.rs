@@ -23,6 +23,13 @@ pub fn run() {
         .setup(|app| {
             tray::setup(app)
                 .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
+
+            if startup::launched_from_system_startup() {
+                tauri::async_runtime::spawn(async {
+                    let _ = commands::run_auto_power_on_internal().await;
+                });
+            }
+
             Ok(())
         })
         .on_window_event(|window, event| match event {

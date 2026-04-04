@@ -8,11 +8,9 @@ import {
   hasToken as checkToken,
   hideWindow,
   refreshState,
-  runAutoPowerOn,
   saveConfig,
   saveToken,
   setTemperature,
-  testConnection,
   turnOff,
   turnOn
 } from "../lib/commands";
@@ -90,11 +88,7 @@ export default function App() {
         return;
       }
 
-      if (nextConfig.autoPowerOnOnStartup) {
-        await runClimateAction(runAutoPowerOn);
-      } else {
-        await handleRefresh();
-      }
+      await handleRefresh();
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`初始化失败: ${String(error)}`) });
     } finally {
@@ -159,14 +153,6 @@ export default function App() {
 
       setConfig(result.data);
 
-      if (hasToken) {
-        const testResult = await testConnection();
-        setStatus({
-          tone: testResult.success ? "success" : "error",
-          text: normalizeStatusText(testResult.message)
-        });
-      }
-
       return true;
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`保存配置失败: ${String(error)}`) });
@@ -186,11 +172,7 @@ export default function App() {
         return false;
       }
 
-      const testResult = await testConnection();
-      setStatus({
-        tone: testResult.success ? "success" : "error",
-        text: normalizeStatusText(testResult.message)
-      });
+      setStatus({ tone: "success", text: "访问令牌已保存。" });
       return true;
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`保存访问令牌失败: ${String(error)}`) });
