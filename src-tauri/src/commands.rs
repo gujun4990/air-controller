@@ -175,6 +175,14 @@ pub fn import_legacy_config(path: Option<String>) -> ServiceResult<AppConfig> {
 }
 
 #[tauri::command]
+pub fn hide_window(window: tauri::WebviewWindow) -> ServiceResult<bool> {
+    match window.hide() {
+        Ok(()) => ServiceResult::ok("窗口已隐藏。", true),
+        Err(error) => ServiceResult::fail(format!("隐藏窗口失败: {error}")),
+    }
+}
+
+#[tauri::command]
 pub fn export_config(path: String) -> ServiceResult<bool> {
     let store = match config_store() {
         Ok(store) => store,

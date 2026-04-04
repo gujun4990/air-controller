@@ -1,5 +1,4 @@
 import { listen } from "@tauri-apps/api/event";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useState } from "react";
 import ConfigPage from "../pages/ConfigPage";
 import MainPage from "../pages/MainPage";
@@ -7,6 +6,7 @@ import {
   getConfig,
   getLaunchOnStartup,
   hasToken as checkToken,
+  hideWindow,
   refreshState,
   runAutoPowerOn,
   saveConfig,
@@ -201,11 +201,11 @@ export default function App() {
   }
 
   async function handleMinimize() {
-    await getCurrentWindow().hide();
+    await hideWindow();
   }
 
   async function handleClose() {
-    await getCurrentWindow().hide();
+    await hideWindow();
   }
 
   return (
@@ -258,8 +258,20 @@ export default function App() {
         </nav>
 
         <div className="sidebar-footer">
-          <span>{hasToken ? "访问令牌已保存" : "尚未保存访问令牌"}</span>
-          <span>{busy ? "正在处理请求" : "空闲"}</span>
+          <span>
+            {climateState
+              ? climateState.isAvailable
+                ? "已连接"
+                : "不可用"
+              : "未连接"}
+          </span>
+          <span>
+            {climateState
+              ? climateState.isOn
+                ? "已开机"
+                : "已关机"
+              : "状态未知"}
+          </span>
         </div>
       </aside>
 

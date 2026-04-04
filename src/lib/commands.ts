@@ -44,3 +44,7 @@ export function getLaunchOnStartup() {
 export function runAutoPowerOn() {
   return invoke<ServiceResult<ClimateState>>("run_auto_power_on");
 }
+
+export function hideWindow() {
+  return invoke<ServiceResult<boolean>>("hide_window");
+}

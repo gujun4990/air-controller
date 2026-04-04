@@ -55,7 +55,8 @@ pub fn run() {
             commands::set_launch_on_startup,
             commands::get_launch_on_startup,
             commands::import_legacy_config,
-            commands::export_config
+            commands::export_config,
+            commands::hide_window
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -93,6 +93,7 @@ input {
   font-size: 0.82rem;
   color: #91a0b8;
   letter-spacing: 0.04em;
+  pointer-events: none;
 }
 
 .title-bar-controls {
