@@ -20,9 +20,7 @@ fn load_client() -> Result<HomeAssistantClient, String> {
     let config_result = config_store.load();
     let config = config_result.data.ok_or(config_result.message)?;
     let token = secure_store().load_token_value()?;
-    let client = HomeAssistantClient::new(config, token)?;
-    let _ = client.token_len();
-    Ok(client)
+    HomeAssistantClient::new(config, token)
 }
 
 #[tauri::command]
@@ -138,6 +136,16 @@ pub async fn run_auto_power_on() -> ServiceResult<ClimateState> {
 }
 
 #[tauri::command]
+pub async fn test_connection() -> ServiceResult<bool> {
+    let client = match load_client() {
+        Ok(client) => client,
+        Err(message) => return ServiceResult::fail(message),
+    };
+
+    client.test_connection().await
+}
+
+#[tauri::command]
 pub fn set_launch_on_startup(enabled: bool) -> ServiceResult<bool> {
     startup::set_launch_on_startup(enabled)
 }
@@ -174,17 +182,4 @@ pub fn export_config(path: String) -> ServiceResult<bool> {
     };
 
     store.export(&path)
-}
-
-#[tauri::command]
-pub fn get_config_directory() -> ServiceResult<String> {
-    let store = match config_store() {
-        Ok(store) => store,
-        Err(message) => return ServiceResult::fail(message),
-    };
-
-    match store.config_directory() {
-        Ok(path) => ServiceResult::ok("配置目录已定位。", path.to_string_lossy().into_owned()),
-        Err(message) => ServiceResult::fail(message),
-    }
 }

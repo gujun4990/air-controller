@@ -41,13 +41,6 @@ impl ConfigStore {
         }
     }
 
-    pub fn config_directory(&self) -> Result<PathBuf, String> {
-        self.config_path
-            .parent()
-            .map(PathBuf::from)
-            .ok_or_else(|| "无法定位配置目录。".to_string())
-    }
-
     pub fn save(&self, config: &AppConfig) -> ServiceResult<AppConfig> {
         if let Err(message) = self.validate(config) {
             return ServiceResult::fail(message);

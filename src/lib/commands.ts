@@ -17,12 +17,12 @@ export function saveToken(token: string) {
   return invoke<ServiceResult<boolean>>("save_token", { token });
 }
 
-export function deleteToken() {
-  return invoke<ServiceResult<boolean>>("delete_token");
-}
-
 export function refreshState() {
   return invoke<ServiceResult<ClimateState>>("get_state");
+}
+
+export function testConnection() {
+  return invoke<ServiceResult<boolean>>("test_connection");
 }
 
 export function turnOn() {
@@ -37,10 +37,6 @@ export function setTemperature(temperature: number) {
   return invoke<ServiceResult<ClimateState>>("set_temperature", { temperature });
 }
 
-export function importLegacyConfig(path?: string) {
-  return invoke<ServiceResult<AppConfig>>("import_legacy_config", { path });
-}
-
 export function exportConfig(path: string) {
   return invoke<ServiceResult<boolean>>("export_config", { path });
 }
@@ -51,8 +47,4 @@ export function getLaunchOnStartup() {
 
 export function runAutoPowerOn() {
   return invoke<ServiceResult<ClimateState>>("run_auto_power_on");
-}
-
-export function getConfigDirectory() {
-  return invoke<ServiceResult<string>>("get_config_directory");
 }

@@ -7,10 +7,7 @@ type Props = {
   busy: boolean;
   onSaveConfig: (config: AppConfig) => Promise<void>;
   onSaveToken: (token: string) => Promise<void>;
-  onDeleteToken: () => Promise<void>;
-  onImportLegacy: () => Promise<void>;
   onExportConfig: () => Promise<void>;
-  onOpenConfigDirectory: () => Promise<void>;
 };
 
 export default function ConfigPage({
@@ -19,10 +16,7 @@ export default function ConfigPage({
   busy,
   onSaveConfig,
   onSaveToken,
-  onDeleteToken,
-  onImportLegacy,
-  onExportConfig,
-  onOpenConfigDirectory
+  onExportConfig
 }: Props) {
   const [draft, setDraft] = useState<AppConfig>(config);
   const [tokenInput, setTokenInput] = useState("");
@@ -140,17 +134,8 @@ export default function ConfigPage({
           <button disabled={busy} type="submit">
             保存配置
           </button>
-          <button className="ghost" disabled={busy} type="button" onClick={() => void onImportLegacy()}>
-            导入旧配置
-          </button>
           <button className="ghost" disabled={busy} type="button" onClick={() => void onExportConfig()}>
             导出配置
-          </button>
-          <button className="ghost" disabled={busy} type="button" onClick={() => void onOpenConfigDirectory()}>
-            打开配置目录
-          </button>
-          <button className="secondary" disabled={busy || !hasToken} type="button" onClick={() => void onDeleteToken()}>
-            清除已保存 Token
           </button>
         </div>
       </form>

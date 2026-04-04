@@ -1,36 +1,37 @@
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { open, save } from "@tauri-apps/plugin-dialog";
-import { openPath } from "@tauri-apps/plugin-opener";
 import MainPage from "../pages/MainPage";
 import ConfigPage from "../pages/ConfigPage";
 import {
-  deleteToken,
   exportConfig,
   getConfig,
-  getConfigDirectory,
   getLaunchOnStartup,
   hasToken as checkToken,
-  importLegacyConfig,
   refreshState,
   runAutoPowerOn,
   saveConfig,
   saveToken,
   setTemperature,
+  testConnection,
   turnOff,
   turnOn
 } from "../lib/commands";
 import { defaultConfig, type AppConfig, type ClimateState } from "../lib/types";
 
 type TabKey = "main" | "config";
+type StatusTone = "info" | "success" | "error";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("main");
   const [config, setConfig] = useState<AppConfig>(defaultConfig);
   const [climateState, setClimateState] = useState<ClimateState | null>(null);
-  const [message, setMessage] = useState("正在加载配置...");
   const [busy, setBusy] = useState(false);
   const [hasToken, setHasToken] = useState(false);
+  const [status, setStatus] = useState<{ tone: StatusTone; text: string }>({
+    tone: "info",
+    text: "正在加载配置..."
+  });
 
   useEffect(() => {
     void initialize();
@@ -70,15 +71,24 @@ export default function App() {
         setConfig(nextConfig);
       }
       setHasToken(Boolean(tokenResult.data));
-      setMessage(configResult.message || "配置已加载");
 
-      if (configResult.success && tokenResult.data) {
-        if (nextConfig.autoPowerOnOnStartup) {
-          await runClimateAction(runAutoPowerOn);
-        } else {
-          await handleRefresh();
-        }
+      if (!configResult.success) {
+        setStatus({ tone: "error", text: configResult.message });
+        return;
       }
+
+      if (!tokenResult.data) {
+        setStatus({ tone: "info", text: "请先在配置页保存 Home Assistant Token。" });
+        return;
+      }
+
+      if (nextConfig.autoPowerOnOnStartup) {
+        await runClimateAction(runAutoPowerOn);
+      } else {
+        await handleRefresh();
+      }
+    } catch (error) {
+      setStatus({ tone: "error", text: `初始化失败: ${String(error)}` });
     } finally {
       setBusy(false);
     }
@@ -91,7 +101,9 @@ export default function App() {
       if (result.data) {
         setClimateState(result.data);
       }
-      setMessage(result.message);
+      setStatus({ tone: result.success ? "success" : "error", text: result.message });
+    } catch (error) {
+      setStatus({ tone: "error", text: `请求失败: ${String(error)}` });
     } finally {
       setBusy(false);
     }
@@ -111,22 +123,30 @@ export default function App() {
 
   async function handleChangeTemperature(delta: number) {
     const base = climateState?.targetTemperature ?? config.defaultTemperature;
-    const next = Math.min(config.maxTemperature, Math.max(config.minTemperature, base + delta));
+    const next = clampTemperature(base + delta, config);
     await runClimateAction(() => setTemperature(next));
-  }
-
-  async function handleRunAutoPowerOn() {
-    await runClimateAction(runAutoPowerOn);
   }
 
   async function handleSaveConfig(nextConfig: AppConfig) {
     setBusy(true);
     try {
       const result = await saveConfig(nextConfig);
+      setStatus({ tone: result.success ? "success" : "error", text: result.message });
+
+      if (!result.success) {
+        return;
+      }
+
       if (result.data) {
         setConfig(result.data);
       }
-      setMessage(result.message);
+
+      if (hasToken) {
+        const testResult = await testConnection();
+        setStatus({ tone: testResult.success ? "success" : "error", text: testResult.message });
+      }
+    } catch (error) {
+      setStatus({ tone: "error", text: `保存配置失败: ${String(error)}` });
     } finally {
       setBusy(false);
     }
@@ -137,43 +157,15 @@ export default function App() {
     try {
       const result = await saveToken(token);
       setHasToken(Boolean(result.data));
-      setMessage(result.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleDeleteToken() {
-    setBusy(true);
-    try {
-      const result = await deleteToken();
-      setHasToken(false);
-      setMessage(result.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleImportLegacy() {
-    const selected = await open({
-      multiple: false,
-      filters: [{ name: "JSON", extensions: ["json"] }],
-      title: "选择旧版 appsettings.json"
-    });
-
-    if (!selected || Array.isArray(selected)) {
-      return;
-    }
-
-    setBusy(true);
-    try {
-      const result = await importLegacyConfig(selected);
-      if (result.data) {
-        setConfig(result.data);
+      if (!result.success) {
+        setStatus({ tone: "error", text: result.message });
+        return;
       }
-      const tokenResult = await checkToken();
-      setHasToken(Boolean(tokenResult.data));
-      setMessage(result.message);
+
+      const testResult = await testConnection();
+      setStatus({ tone: testResult.success ? "success" : "error", text: testResult.message });
+    } catch (error) {
+      setStatus({ tone: "error", text: `保存 Token 失败: ${String(error)}` });
     } finally {
       setBusy(false);
     }
@@ -193,25 +185,9 @@ export default function App() {
     setBusy(true);
     try {
       const result = await exportConfig(selected);
-      setMessage(result.message);
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleOpenConfigDirectory() {
-    setBusy(true);
-    try {
-      const result = await getConfigDirectory();
-      if (!result.success || !result.data) {
-        setMessage(result.message);
-        return;
-      }
-
-      await openPath(result.data);
-      setMessage(`已打开配置目录：${result.data}`);
+      setStatus({ tone: result.success ? "success" : "error", text: result.message });
     } catch (error) {
-      setMessage(`打开配置目录失败: ${String(error)}`);
+      setStatus({ tone: "error", text: `导出配置失败: ${String(error)}` });
     } finally {
       setBusy(false);
     }
@@ -222,7 +198,7 @@ export default function App() {
       <aside className="sidebar">
         <div>
           <h1>AirController</h1>
-          <p>跨平台 Home Assistant 空调控制器</p>
+          <p>Home Assistant 空调控制</p>
         </div>
 
         <nav className="nav-list">
@@ -241,27 +217,27 @@ export default function App() {
       </aside>
 
       <main className="content-shell">
+        <div className={`status-banner ${status.tone}`}>
+          <strong>{status.tone === "error" ? "错误" : status.tone === "success" ? "状态" : "提示"}</strong>
+          <span>{status.text}</span>
+        </div>
+
         {activeTab === "main" ? (
           <MainPage
             busy={busy}
             config={config}
             onChangeTemperature={handleChangeTemperature}
             onRefresh={handleRefresh}
-            onRunAutoPowerOn={handleRunAutoPowerOn}
             onTurnOff={handleTurnOff}
             onTurnOn={handleTurnOn}
             state={climateState}
-            statusMessage={message}
           />
         ) : (
           <ConfigPage
             busy={busy}
             config={config}
             hasToken={hasToken}
-            onDeleteToken={handleDeleteToken}
             onExportConfig={handleExportConfig}
-            onImportLegacy={handleImportLegacy}
-            onOpenConfigDirectory={handleOpenConfigDirectory}
             onSaveConfig={handleSaveConfig}
             onSaveToken={handleSaveToken}
           />
@@ -269,4 +245,11 @@ export default function App() {
       </main>
     </div>
   );
+}
+
+function clampTemperature(value: number, config: AppConfig) {
+  const bounded = Math.min(config.maxTemperature, Math.max(config.minTemperature, value));
+  const step = config.temperatureStep || 1;
+  const normalized = Math.round(bounded / step) * step;
+  return Number(normalized.toFixed(1));
 }

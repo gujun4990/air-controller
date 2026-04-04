@@ -1,11 +1,11 @@
 use reqwest::{header, Client};
 use serde_json::{json, Value};
+use tokio::time::{sleep, Duration};
 
 use crate::models::{AppConfig, ClimateState, ServiceResult};
 
 pub struct HomeAssistantClient {
     config: AppConfig,
-    token: String,
     client: Client,
 }
 
@@ -23,11 +23,33 @@ impl HomeAssistantClient {
             .build()
             .map_err(|error| format!("创建 HTTP 客户端失败: {error}"))?;
 
-        Ok(Self {
-            config,
-            token,
-            client,
-        })
+        Ok(Self { config, client })
+    }
+
+    pub async fn test_connection(&self) -> ServiceResult<bool> {
+        let url = format!("{}/api/", self.config.base_url.trim_end_matches('/'));
+        let response = match self.client.get(url).send().await {
+            Ok(response) => response,
+            Err(error) => {
+                return ServiceResult::fail(format!("连接 Home Assistant 失败: {error}"));
+            }
+        };
+
+        let status = response.status();
+        let body = match response.text().await {
+            Ok(body) => body,
+            Err(error) => return ServiceResult::fail(format!("读取响应失败: {error}")),
+        };
+
+        if !status.is_success() {
+            return ServiceResult::fail(describe_http_failure(
+                "连接测试失败",
+                status.as_u16(),
+                &body,
+            ));
+        }
+
+        ServiceResult::ok("Home Assistant 连接正常。", true)
     }
 
     pub async fn get_state(&self) -> ServiceResult<ClimateState> {
@@ -48,7 +70,11 @@ impl HomeAssistantClient {
         };
 
         if !status.is_success() {
-            return ServiceResult::fail(format!("获取空调状态失败: {} {}", status.as_u16(), body));
+            return ServiceResult::fail(describe_http_failure(
+                "获取空调状态失败",
+                status.as_u16(),
+                &body,
+            ));
         }
 
         let value = match serde_json::from_str::<Value>(&body) {
@@ -108,14 +134,36 @@ impl HomeAssistantClient {
     }
 
     pub async fn set_temperature(&self, temperature: f64) -> ServiceResult<ClimateState> {
-        self.post_service(
-            "set_temperature",
-            json!({ "entity_id": self.config.climate_entity_id, "temperature": temperature }),
-        )
-        .await
+        let current_state = self.get_state().await.data;
+        let mut payload = json!({
+            "entity_id": self.config.climate_entity_id,
+            "temperature": temperature
+        });
+
+        if let Some(state) = current_state {
+            if !state.hvac_mode.is_empty() && state.hvac_mode != "off" {
+                payload["hvac_mode"] = Value::String(state.hvac_mode);
+            }
+        }
+
+        let service_result = self.post_service_raw("set_temperature", payload).await;
+        if !service_result.success {
+            return ServiceResult::fail(service_result.message);
+        }
+
+        self.wait_for_target_temperature(temperature).await
     }
 
     async fn post_service(&self, action: &str, payload: Value) -> ServiceResult<ClimateState> {
+        let result = self.post_service_raw(action, payload).await;
+        if !result.success {
+            return ServiceResult::fail(result.message);
+        }
+
+        self.get_state().await
+    }
+
+    async fn post_service_raw(&self, action: &str, payload: Value) -> ServiceResult<bool> {
         let url = format!(
             "{}/api/services/climate/{}",
             self.config.base_url.trim_end_matches('/'),
@@ -133,14 +181,48 @@ impl HomeAssistantClient {
         };
 
         if !status.is_success() {
-            return ServiceResult::fail(format!("调用失败: {} {}", status.as_u16(), body));
+            return ServiceResult::fail(describe_http_failure("调用失败", status.as_u16(), &body));
         }
 
-        self.get_state().await
+        ServiceResult::ok("调用成功。", true)
     }
 
-    pub fn token_len(&self) -> usize {
-        self.token.len()
+    async fn wait_for_target_temperature(
+        &self,
+        expected_temperature: f64,
+    ) -> ServiceResult<ClimateState> {
+        let mut latest_state: Option<ClimateState> = None;
+
+        for _ in 0..5 {
+            sleep(Duration::from_millis(350)).await;
+
+            let state_result = self.get_state().await;
+            if let Some(state) = state_result.data.clone() {
+                let matched = state
+                    .target_temperature
+                    .is_some_and(|value| (value - expected_temperature).abs() < 0.11);
+                latest_state = Some(state.clone());
+
+                if matched {
+                    return ServiceResult::ok(
+                        format!("目标温度已设置为 {expected_temperature:.1} 摄氏度。"),
+                        state,
+                    );
+                }
+            }
+        }
+
+        if let Some(state) = latest_state {
+            return ServiceResult::ok(
+                format!(
+                    "已发送温度设置请求，当前目标温度为 {} 摄氏度。",
+                    state.target_temperature.unwrap_or(expected_temperature)
+                ),
+                state,
+            );
+        }
+
+        ServiceResult::fail("温度设置请求已发送，但未能确认最新状态。")
     }
 }
 
@@ -149,4 +231,23 @@ fn parse_double(value: Option<&Value>) -> Option<f64> {
     value
         .as_f64()
         .or_else(|| value.as_str().and_then(|text| text.parse::<f64>().ok()))
+        .or_else(|| {
+            value
+                .get("target_temp_high")
+                .and_then(|item| parse_double(Some(item)))
+                .or_else(|| {
+                    value
+                        .get("target_temp_low")
+                        .and_then(|item| parse_double(Some(item)))
+                })
+        })
+}
+
+fn describe_http_failure(prefix: &str, status: u16, body: &str) -> String {
+    match status {
+        401 => format!("{prefix}: Token 无效或已过期。"),
+        403 => format!("{prefix}: 当前 Token 没有访问权限。"),
+        404 => format!("{prefix}: 地址或实体不存在，请检查配置。"),
+        _ => format!("{prefix}: HTTP {status} {body}"),
+    }
 }

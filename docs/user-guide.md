@@ -66,6 +66,8 @@ sudo apt-get install -f
 
 保存后，Token 会进入系统密钥链，不会写入普通配置文件。
 
+保存配置或保存 Token 后，应用会自动尝试验证与 Home Assistant 的连接，并在界面顶部显示结果。
+
 ## 主界面说明
 
 主界面会显示：

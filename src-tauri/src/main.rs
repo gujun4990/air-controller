@@ -1,3 +1,5 @@
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 mod auto_power_on;
 mod commands;
 mod config;
@@ -12,7 +14,6 @@ pub fn run() {
     tauri::Builder::default()
         .manage(tray::CloseState::default())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
             tray::setup(app)
                 .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
@@ -44,11 +45,11 @@ pub fn run() {
             commands::turn_off,
             commands::set_temperature,
             commands::run_auto_power_on,
+            commands::test_connection,
             commands::set_launch_on_startup,
             commands::get_launch_on_startup,
             commands::import_legacy_config,
-            commands::export_config,
-            commands::get_config_directory
+            commands::export_config
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
