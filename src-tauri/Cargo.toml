@@ -1,6 +1,6 @@
 [package]
 name = "air-controller"
-version = "0.1.18"
+version = "0.1.19"
 description = "Cross-platform Home Assistant air controller"
 authors = ["OpenCode"]
 edition = "2021"
