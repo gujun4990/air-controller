@@ -4,7 +4,6 @@ import ConfigPage from "../pages/ConfigPage";
 import MainPage from "../pages/MainPage";
 import {
   getConfig,
-  getLaunchOnStartup,
   hasToken as checkToken,
   hideWindow,
   refreshState,
@@ -59,24 +58,14 @@ export default function App() {
   async function initialize() {
     setBusy(true);
     try {
-      const [configResult, tokenResult, startupResult] = await Promise.all([
-        getConfig(),
-        checkToken(),
-        getLaunchOnStartup()
-      ]);
+      const [configResult, tokenResult] = await Promise.all([getConfig(), checkToken()]);
 
       if (!configResult.success || !configResult.data) {
         setStatus({ tone: "error", text: normalizeStatusText(configResult.message) });
         return;
       }
 
-      const nextConfig: AppConfig = {
-        ...configResult.data,
-        launchOnSystemStartup:
-          startupResult.data ?? configResult.data.launchOnSystemStartup
-      };
-
-      setConfig(nextConfig);
+      setConfig(configResult.data);
       setHasToken(Boolean(tokenResult.data));
 
       if (!tokenResult.data) {
@@ -140,7 +129,7 @@ export default function App() {
   async function handleSaveSettings(nextConfig: AppConfig, token: string): Promise<boolean> {
     setBusy(true);
     try {
-      const result = await saveSettings(nextConfig, token.trim() || null);
+      const result = await saveSettings(nextConfig, token);
       setStatus({
         tone: result.success ? "success" : "error",
         text: normalizeStatusText(result.message)
@@ -150,8 +139,8 @@ export default function App() {
         return false;
       }
 
-      setConfig(result.data.config);
-      setHasToken(result.data.hasToken);
+      setConfig(result.data);
+      setHasToken(true);
 
       return true;
     } catch (error) {
@@ -164,6 +153,10 @@ export default function App() {
 
   async function handleMinimize() {
     await hideWindow();
+  }
+
+  function handleRequireToken() {
+    setStatus({ tone: "error", text: "访问令牌不能为空。" });
   }
 
   async function handleClose() {
@@ -219,22 +212,7 @@ export default function App() {
           </button>
         </nav>
 
-        <div className="sidebar-footer">
-          <span>
-            {climateState
-              ? climateState.isAvailable
-                ? "已连接"
-                : "不可用"
-              : "未连接"}
-          </span>
-          <span>
-            {climateState
-              ? climateState.isOn
-                ? "已开机"
-                : "已关机"
-              : "状态未知"}
-          </span>
-        </div>
+        <div className="sidebar-footer" />
       </aside>
 
       <main className="content-shell">
@@ -264,8 +242,8 @@ export default function App() {
             <ConfigPage
               busy={busy}
               config={config}
-              hasToken={hasToken}
-              onSaveSettings={handleSaveSettings}
+              onSave={handleSaveSettings}
+              onRequireToken={handleRequireToken}
             />
           )}
         </div>

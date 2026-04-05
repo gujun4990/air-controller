@@ -5,19 +5,16 @@ use crate::{
     models::{AppConfig, ClimateState, ServiceResult},
 };
 
+const STARTUP_DELAY_SECONDS: u64 = 8;
+const RETRY_COUNT: i32 = 3;
+
 pub async fn execute(
     config: AppConfig,
     client: &HomeAssistantClient,
 ) -> ServiceResult<ClimateState> {
-    if !config.auto_power_on_on_startup {
-        return client.get_state().await;
-    }
+    sleep(Duration::from_secs(STARTUP_DELAY_SECONDS)).await;
 
-    if config.startup_delay_seconds > 0 {
-        sleep(Duration::from_secs(config.startup_delay_seconds as u64)).await;
-    }
-
-    let retries = config.retry_count.max(1);
+    let retries = RETRY_COUNT;
     let mut last_message = String::from("启动自动开机失败。");
 
     for _ in 0..retries {

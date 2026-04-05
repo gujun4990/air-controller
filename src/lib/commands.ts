@@ -1,32 +1,20 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppConfig, ClimateState, SavedSettings, ServiceResult } from "./types";
+import type { AppConfig, ClimateState, ServiceResult } from "./types";
 
 export function getConfig() {
   return invoke<ServiceResult<AppConfig>>("get_config");
 }
 
-export function saveConfig(config: AppConfig) {
-  return invoke<ServiceResult<AppConfig>>("save_config", { config });
-}
-
-export function saveSettings(config: AppConfig, token: string | null) {
-  return invoke<ServiceResult<SavedSettings>>("save_settings", { config, token });
+export function saveSettings(config: AppConfig, token: string) {
+  return invoke<ServiceResult<AppConfig>>("save_settings", { config, token });
 }
 
 export function hasToken() {
   return invoke<ServiceResult<boolean>>("has_token");
 }
 
-export function saveToken(token: string) {
-  return invoke<ServiceResult<boolean>>("save_token", { token });
-}
-
 export function refreshState() {
   return invoke<ServiceResult<ClimateState>>("get_state");
-}
-
-export function testConnection() {
-  return invoke<ServiceResult<boolean>>("test_connection");
 }
 
 export function turnOn() {
@@ -39,14 +27,6 @@ export function turnOff() {
 
 export function setTemperature(temperature: number) {
   return invoke<ServiceResult<ClimateState>>("set_temperature", { temperature });
-}
-
-export function getLaunchOnStartup() {
-  return invoke<ServiceResult<boolean>>("get_launch_on_startup");
-}
-
-export function runAutoPowerOn() {
-  return invoke<ServiceResult<ClimateState>>("run_auto_power_on");
 }
 
 export function hideWindow() {

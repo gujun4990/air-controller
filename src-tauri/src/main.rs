@@ -24,6 +24,11 @@ pub fn run() {
             tray::setup(app)
                 .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
 
+            let startup_result = startup::set_launch_on_startup(true);
+            if !startup_result.success {
+                eprintln!("注册系统自启动失败: {}", startup_result.message);
+            }
+
             if startup::launched_from_system_startup() {
                 tauri::async_runtime::spawn(async {
                     let _ = commands::run_auto_power_on_internal().await;
@@ -49,21 +54,12 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::get_config,
-            commands::save_config,
             commands::save_settings,
             commands::has_token,
-            commands::save_token,
-            commands::delete_token,
             commands::get_state,
             commands::turn_on,
             commands::turn_off,
             commands::set_temperature,
-            commands::run_auto_power_on,
-            commands::test_connection,
-            commands::set_launch_on_startup,
-            commands::get_launch_on_startup,
-            commands::import_legacy_config,
-            commands::export_config,
             commands::hide_window
         ])
         .run(tauri::generate_context!())

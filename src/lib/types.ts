@@ -1,10 +1,6 @@
 export type AppConfig = {
   baseUrl: string;
   climateEntityId: string;
-  launchOnSystemStartup: boolean;
-  autoPowerOnOnStartup: boolean;
-  startupDelaySeconds: number;
-  retryCount: number;
   defaultTemperature: number;
   minTemperature: number;
   maxTemperature: number;
@@ -31,18 +27,9 @@ export type ServiceResult<T> = {
   data: T | null;
 };
 
-export type SavedSettings = {
-  config: AppConfig;
-  hasToken: boolean;
-};
-
 export const defaultConfig: AppConfig = {
   baseUrl: "",
   climateEntityId: "climate.living_room_ac",
-  launchOnSystemStartup: false,
-  autoPowerOnOnStartup: false,
-  startupDelaySeconds: 8,
-  retryCount: 3,
   defaultTemperature: 26,
   minTemperature: 16,
   maxTemperature: 30,

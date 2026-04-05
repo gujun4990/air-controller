@@ -41,32 +41,6 @@ impl HomeAssistantClient {
         Ok(Self { config, client })
     }
 
-    pub async fn test_connection(&self) -> ServiceResult<bool> {
-        let url = format!("{}/api/", self.config.base_url.trim_end_matches('/'));
-        let response = match self.client.get(url).send().await {
-            Ok(response) => response,
-            Err(error) => {
-                return ServiceResult::fail(format!("连接服务失败: {error}"));
-            }
-        };
-
-        let status = response.status();
-        let body = match response.text().await {
-            Ok(body) => body,
-            Err(error) => return ServiceResult::fail(format!("读取响应失败: {error}")),
-        };
-
-        if !status.is_success() {
-            return ServiceResult::fail(describe_http_failure(
-                "连接校验失败",
-                status.as_u16(),
-                &body,
-            ));
-        }
-
-        ServiceResult::ok("连接成功。", true)
-    }
-
     pub async fn get_state(&self) -> ServiceResult<ClimateState> {
         match self.get_state_snapshot().await {
             Ok(snapshot) => ServiceResult::ok("状态已刷新。", snapshot.state),

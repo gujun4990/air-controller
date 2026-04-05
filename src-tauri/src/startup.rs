@@ -38,15 +38,3 @@ pub fn set_launch_on_startup(enabled: bool) -> ServiceResult<bool> {
 
     ServiceResult::ok("系统自启动状态已更新。", enabled)
 }
-
-pub fn get_launch_on_startup() -> ServiceResult<bool> {
-    let launcher = match launcher() {
-        Ok(launcher) => launcher,
-        Err(message) => return ServiceResult::fail(message),
-    };
-
-    match launcher.is_enabled() {
-        Ok(enabled) => ServiceResult::ok("系统自启动状态已读取。", enabled),
-        Err(error) => ServiceResult::fail(format!("读取系统自启动状态失败: {error}")),
-    }
-}
