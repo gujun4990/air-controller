@@ -48,21 +48,36 @@ pub fn get_config() -> ServiceResult<AppConfig> {
 }
 
 #[tauri::command]
-pub fn save_settings(config: AppConfig, token: String) -> ServiceResult<AppConfig> {
+pub async fn save_settings(config: AppConfig, token: String) -> ServiceResult<AppConfig> {
     let store = match config_store() {
         Ok(store) => store,
         Err(message) => return ServiceResult::fail(message),
     };
     let secure_store = secure_store();
 
-    if token.trim().is_empty() {
+    let trimmed_token = token.trim();
+    if trimmed_token.is_empty() {
         return ServiceResult::fail("访问令牌不能为空。".to_string());
+    }
+
+    if let Err(message) = store.validate(&config) {
+        return ServiceResult::fail(message);
+    }
+
+    let client = match HomeAssistantClient::new(config.clone(), trimmed_token.to_string()) {
+        Ok(client) => client,
+        Err(message) => return ServiceResult::fail(message),
+    };
+
+    let validation_result = client.get_state().await;
+    if !validation_result.success {
+        return ServiceResult::fail(validation_result.message);
     }
 
     let previous_config = store.load().data;
     let previous_token = secure_store.load_token_value().ok();
 
-    let token_result = secure_store.save_token(token.trim());
+    let token_result = secure_store.save_token(trimmed_token);
     if !token_result.success {
         return ServiceResult::fail(token_result.message);
     }

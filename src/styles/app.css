@@ -472,9 +472,10 @@ label span {
 .config-form {
   flex: 1;
   min-height: 0;
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  gap: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.9rem;
 }
 
 .config-grid {
@@ -550,4 +551,8 @@ label {
 .config-actions {
   display: flex;
   gap: 0.6rem;
+}
+
+.config-actions {
+  justify-content: flex-end;
 }

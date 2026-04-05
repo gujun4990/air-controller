@@ -15,7 +15,7 @@
         "title": "AirController",
         "width": 780,
         "height": 540,
-        "resizable": false,
+        "resizable": true,
         "minWidth": 780,
         "minHeight": 540,
         "decorations": false
