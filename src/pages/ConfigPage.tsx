@@ -52,7 +52,7 @@ export default function ConfigPage({
         <div>
           <span className="eyebrow">配置中心</span>
           <h2>配置</h2>
-          <p>请填写连接信息后保存。</p>
+          <p>请联系管理员获取服务地址、空调ID和访问令牌后再进行配置。</p>
         </div>
       </div>
 

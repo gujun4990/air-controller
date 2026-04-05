@@ -475,7 +475,7 @@ label span {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  gap: 0.9rem;
+  gap: 0.8rem;
 }
 
 .config-grid {
@@ -555,4 +555,11 @@ label {
 
 .config-actions {
   justify-content: flex-end;
+  margin-top: 0.15rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.config-actions button {
+  min-width: 132px;
 }
