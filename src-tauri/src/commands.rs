@@ -186,6 +186,11 @@ pub async fn run_auto_power_on_internal() -> ServiceResult<ClimateState> {
 }
 
 #[tauri::command]
+pub fn is_system_startup_launch() -> bool {
+    startup::launched_from_system_startup()
+}
+
+#[tauri::command]
 pub fn take_startup_auto_power_on_result(
     state: tauri::State<StartupAutoPowerOnStore>,
 ) -> Option<ServiceResult<ClimateState>> {

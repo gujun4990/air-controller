@@ -6,6 +6,7 @@ import {
   getConfig,
   hasToken as checkToken,
   hideWindow,
+  isSystemStartupLaunch,
   minimizeWindow,
   refreshState,
   saveSettings,
@@ -21,6 +22,8 @@ type StatusTone = "info" | "success" | "error";
 type StatusState = { tone: StatusTone; text: string };
 
 const STEP_CELSIUS = 1;
+const STARTUP_RESULT_RETRY_COUNT = 10;
+const STARTUP_RESULT_RETRY_DELAY_MS = 2000;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("main");
@@ -96,18 +99,32 @@ export default function App() {
         return;
       }
 
-      await handleRefresh();
-
-      const startupResult = await takeStartupAutoPowerOnResult();
-      if (startupResult?.data) {
-        setClimateState(startupResult.data);
-      }
-      if (startupResult) {
+      if (await isSystemStartupLaunch()) {
         setStatus({
-          tone: startupResult.success ? "success" : "error",
-          text: normalizeStatusText(startupResult.message)
+          tone: "info",
+          text: "正在启动空调，请稍候..."
         });
+
+        for (let index = 0; index < STARTUP_RESULT_RETRY_COUNT; index += 1) {
+          const startupResult = await takeStartupAutoPowerOnResult();
+          if (startupResult) {
+            if (startupResult.data) {
+              setClimateState(startupResult.data);
+            }
+            setStatus({
+              tone: startupResult.success ? "success" : "error",
+              text: normalizeStatusText(startupResult.message)
+            });
+            break;
+          }
+
+          await new Promise((resolve) => window.setTimeout(resolve, STARTUP_RESULT_RETRY_DELAY_MS));
+        }
+
+        return;
       }
+
+      await handleRefresh();
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`初始化失败: ${String(error)}`) });
     } finally {
