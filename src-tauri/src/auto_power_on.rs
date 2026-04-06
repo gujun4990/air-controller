@@ -27,7 +27,17 @@ pub async fn execute(
 
         let set_result = client.set_temperature(config.default_temperature).await;
         if set_result.success {
-            return ServiceResult::ok("启动自动开机成功。", set_result.data.unwrap_or_default());
+            let refresh_result = client.get_state().await;
+            if refresh_result.success {
+                return ServiceResult::ok(
+                    "启动自动开机成功。",
+                    refresh_result.data.unwrap_or_default(),
+                );
+            }
+
+            last_message = refresh_result.message;
+            sleep(Duration::from_secs(2)).await;
+            continue;
         }
 
         last_message = set_result.message;

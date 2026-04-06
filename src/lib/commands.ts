@@ -29,6 +29,10 @@ export function setTemperature(temperature: number) {
   return invoke<ServiceResult<ClimateState>>("set_temperature", { temperature });
 }
 
+export function minimizeWindow() {
+  return invoke<ServiceResult<boolean>>("minimize_window");
+}
+
 export function hideWindow() {
   return invoke<ServiceResult<boolean>>("hide_window");
 }

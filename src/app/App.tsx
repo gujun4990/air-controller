@@ -6,6 +6,7 @@ import {
   getConfig,
   hasToken as checkToken,
   hideWindow,
+  minimizeWindow,
   refreshState,
   saveSettings,
   setTemperature,
@@ -152,7 +153,7 @@ export default function App() {
   }
 
   async function handleMinimize() {
-    await hideWindow();
+    await minimizeWindow();
   }
 
   function handleRequireToken() {

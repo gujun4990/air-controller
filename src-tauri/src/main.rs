@@ -44,11 +44,6 @@ pub fn run() {
                     tray::handle_close_requested(window);
                 }
             }
-            tauri::WindowEvent::Resized(_) => {
-                if window.is_minimized().unwrap_or(false) {
-                    let _ = window.hide();
-                }
-            }
             tauri::WindowEvent::Destroyed => {}
             _ => {}
         })
@@ -60,6 +55,7 @@ pub fn run() {
             commands::turn_on,
             commands::turn_off,
             commands::set_temperature,
+            commands::minimize_window,
             commands::hide_window
         ])
         .run(tauri::generate_context!())

@@ -186,6 +186,14 @@ pub async fn run_auto_power_on_internal() -> ServiceResult<ClimateState> {
 }
 
 #[tauri::command]
+pub fn minimize_window(window: tauri::WebviewWindow) -> ServiceResult<bool> {
+    match window.minimize() {
+        Ok(()) => ServiceResult::ok("窗口已最小化。", true),
+        Err(error) => ServiceResult::fail(format!("最小化窗口失败: {error}")),
+    }
+}
+
+#[tauri::command]
 pub fn hide_window(window: tauri::WebviewWindow) -> ServiceResult<bool> {
     match window.hide() {
         Ok(()) => ServiceResult::ok("窗口已隐藏。", true),
