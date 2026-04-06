@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -63,5 +64,13 @@ impl<T> ServiceResult<T> {
             message: message.into(),
             data: None,
         }
+    }
+}
+
+pub struct StartupAutoPowerOnStore(pub Mutex<Option<ServiceResult<ClimateState>>>);
+
+impl Default for StartupAutoPowerOnStore {
+    fn default() -> Self {
+        Self(Mutex::new(None))
     }
 }

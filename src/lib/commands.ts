@@ -29,6 +29,10 @@ export function setTemperature(temperature: number) {
   return invoke<ServiceResult<ClimateState>>("set_temperature", { temperature });
 }
 
+export function takeStartupAutoPowerOnResult() {
+  return invoke<ServiceResult<ClimateState> | null>("take_startup_auto_power_on_result");
+}
+
 export function minimizeWindow() {
   return invoke<ServiceResult<boolean>>("minimize_window");
 }

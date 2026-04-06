@@ -10,6 +10,7 @@ import {
   refreshState,
   saveSettings,
   setTemperature,
+  takeStartupAutoPowerOnResult,
   turnOff,
   turnOn
 } from "../lib/commands";
@@ -52,9 +53,19 @@ export default function App() {
       unlistenNavigate = dispose;
     });
 
-    void listen<string>("startup-auto-power-on-finished", () => {
-      void handleRefresh();
-    }).then((dispose) => {
+    void listen<{ success: boolean; message: string; data: ClimateState | null }>(
+      "startup-auto-power-on-finished",
+      (event) => {
+        if (event.payload.data) {
+          setClimateState(event.payload.data);
+        }
+
+        setStatus({
+          tone: event.payload.success ? "success" : "error",
+          text: normalizeStatusText(event.payload.message)
+        });
+      }
+    ).then((dispose) => {
       unlistenStartup = dispose;
     });
 
@@ -86,6 +97,17 @@ export default function App() {
       }
 
       await handleRefresh();
+
+      const startupResult = await takeStartupAutoPowerOnResult();
+      if (startupResult?.data) {
+        setClimateState(startupResult.data);
+      }
+      if (startupResult) {
+        setStatus({
+          tone: startupResult.success ? "success" : "error",
+          text: normalizeStatusText(startupResult.message)
+        });
+      }
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`初始化失败: ${String(error)}`) });
     } finally {

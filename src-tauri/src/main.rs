@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
+use crate::models::StartupAutoPowerOnStore;
 
 mod auto_power_on;
 mod commands;
@@ -15,6 +16,7 @@ mod tray;
 pub fn run() {
     tauri::Builder::default()
         .manage(tray::CloseState::default())
+        .manage(StartupAutoPowerOnStore::default())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
             let _ = tray::show_main_window(app);
@@ -32,8 +34,11 @@ pub fn run() {
             if startup::launched_from_system_startup() {
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
-                    let _ = commands::run_auto_power_on_internal().await;
-                    let _ = app_handle.emit("startup-auto-power-on-finished", "done");
+                    let result = commands::run_auto_power_on_internal().await;
+                    if let Ok(mut store) = app_handle.state::<StartupAutoPowerOnStore>().0.lock() {
+                        *store = Some(result.clone());
+                    }
+                    let _ = app_handle.emit("startup-auto-power-on-finished", result);
                 });
             }
 
@@ -57,6 +62,7 @@ pub fn run() {
             commands::turn_on,
             commands::turn_off,
             commands::set_temperature,
+            commands::take_startup_auto_power_on_result,
             commands::minimize_window,
             commands::hide_window
         ])
