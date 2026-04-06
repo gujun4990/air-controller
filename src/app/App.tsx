@@ -4,26 +4,31 @@ import ConfigPage from "../pages/ConfigPage";
 import MainPage from "../pages/MainPage";
 import {
   getConfig,
+  getStartupAutoPowerOnStatus,
   hasToken as checkToken,
   hideWindow,
-  isSystemStartupLaunch,
   minimizeWindow,
   refreshState,
   saveSettings,
   setTemperature,
-  takeStartupAutoPowerOnResult,
   turnOff,
   turnOn
 } from "../lib/commands";
-import { defaultConfig, type AppConfig, type ClimateState, type ServiceResult } from "../lib/types";
+import {
+  defaultConfig,
+  type AppConfig,
+  type ClimateState,
+  type ServiceResult,
+  type StartupAutoPowerOnStatus
+} from "../lib/types";
 
 type TabKey = "main" | "config";
 type StatusTone = "info" | "success" | "error";
 type StatusState = { tone: StatusTone; text: string };
 
 const STEP_CELSIUS = 1;
-const STARTUP_RESULT_RETRY_COUNT = 10;
-const STARTUP_RESULT_RETRY_DELAY_MS = 2000;
+const STARTUP_STATUS_POLL_COUNT = 20;
+const STARTUP_STATUS_POLL_DELAY_MS = 1000;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("main");
@@ -93,31 +98,22 @@ export default function App() {
         return;
       }
 
-      if (await isSystemStartupLaunch()) {
+      const startupStatus = await getStartupAutoPowerOnStatus();
+      if (startupStatus.pending) {
         setStatus({
           tone: "info",
           text: "正在启动空调，请稍候..."
         });
 
-        for (let index = 0; index < STARTUP_RESULT_RETRY_COUNT; index += 1) {
-          if (startupResultHandledRef.current) {
-            return;
-          }
+        void pollStartupStatus();
+        return;
+      }
 
-          if (await tryApplyStartupResult()) {
-            return;
-          }
-
-          await delay(STARTUP_RESULT_RETRY_DELAY_MS);
-        }
-
-        await handleRefresh();
+      if (applyStartupStatus(startupStatus)) {
         return;
       }
 
       await handleRefresh();
-
-      await tryApplyStartupResult();
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`初始化失败: ${String(error)}`) });
     } finally {
@@ -223,8 +219,30 @@ export default function App() {
     return true;
   }
 
-  async function tryApplyStartupResult() {
-    return applyStartupResult(await takeStartupAutoPowerOnResult());
+  function applyStartupStatus(status: StartupAutoPowerOnStatus) {
+    return applyStartupResult(status.result);
+  }
+
+  async function pollStartupStatus() {
+    for (let index = 0; index < STARTUP_STATUS_POLL_COUNT; index += 1) {
+      if (startupResultHandledRef.current) {
+        return;
+      }
+
+      const status = await getStartupAutoPowerOnStatus();
+      if (applyStartupStatus(status)) {
+        return;
+      }
+
+      if (!status.pending) {
+        await handleRefresh();
+        return;
+      }
+
+      await delay(STARTUP_STATUS_POLL_DELAY_MS);
+    }
+
+    await handleRefresh();
   }
 
   return (

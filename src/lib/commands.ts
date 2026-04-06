@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppConfig, ClimateState, ServiceResult } from "./types";
+import type { AppConfig, ClimateState, ServiceResult, StartupAutoPowerOnStatus } from "./types";
 
 export function getConfig() {
   return invoke<ServiceResult<AppConfig>>("get_config");
@@ -29,12 +29,8 @@ export function setTemperature(temperature: number) {
   return invoke<ServiceResult<ClimateState>>("set_temperature", { temperature });
 }
 
-export function isSystemStartupLaunch() {
-  return invoke<boolean>("is_system_startup_launch");
-}
-
-export function takeStartupAutoPowerOnResult() {
-  return invoke<ServiceResult<ClimateState> | null>("take_startup_auto_power_on_result");
+export function getStartupAutoPowerOnStatus() {
+  return invoke<StartupAutoPowerOnStatus>("get_startup_auto_power_on_status");
 }
 
 export function minimizeWindow() {

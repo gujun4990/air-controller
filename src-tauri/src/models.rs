@@ -67,10 +67,43 @@ impl<T> ServiceResult<T> {
     }
 }
 
-pub struct StartupAutoPowerOnStore(pub Mutex<Option<ServiceResult<ClimateState>>>);
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StartupAutoPowerOnStatus {
+    pub pending: bool,
+    pub result: Option<ServiceResult<ClimateState>>,
+}
+
+#[derive(Debug, Clone)]
+pub enum StartupAutoPowerOnState {
+    Idle,
+    Pending,
+    Finished(ServiceResult<ClimateState>),
+}
+
+impl StartupAutoPowerOnState {
+    pub fn as_status(&self) -> StartupAutoPowerOnStatus {
+        match self {
+            Self::Idle => StartupAutoPowerOnStatus {
+                pending: false,
+                result: None,
+            },
+            Self::Pending => StartupAutoPowerOnStatus {
+                pending: true,
+                result: None,
+            },
+            Self::Finished(result) => StartupAutoPowerOnStatus {
+                pending: false,
+                result: Some(result.clone()),
+            },
+        }
+    }
+}
+
+pub struct StartupAutoPowerOnStore(pub Mutex<StartupAutoPowerOnState>);
 
 impl Default for StartupAutoPowerOnStore {
     fn default() -> Self {
-        Self(Mutex::new(None))
+        Self(Mutex::new(StartupAutoPowerOnState::Idle))
     }
 }
