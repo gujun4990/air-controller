@@ -16,7 +16,7 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             base_url: String::new(),
-            climate_entity_id: "climate.living_room_ac".into(),
+            climate_entity_id: String::new(),
             default_temperature: 26.0,
             min_temperature: 16.0,
             max_temperature: 30.0,
@@ -67,43 +67,10 @@ impl<T> ServiceResult<T> {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StartupAutoPowerOnStatus {
-    pub pending: bool,
-    pub result: Option<ServiceResult<ClimateState>>,
-}
-
-#[derive(Debug, Clone)]
-pub enum StartupAutoPowerOnState {
-    Idle,
-    Pending,
-    Finished(ServiceResult<ClimateState>),
-}
-
-impl StartupAutoPowerOnState {
-    pub fn as_status(&self) -> StartupAutoPowerOnStatus {
-        match self {
-            Self::Idle => StartupAutoPowerOnStatus {
-                pending: false,
-                result: None,
-            },
-            Self::Pending => StartupAutoPowerOnStatus {
-                pending: true,
-                result: None,
-            },
-            Self::Finished(result) => StartupAutoPowerOnStatus {
-                pending: false,
-                result: Some(result.clone()),
-            },
-        }
-    }
-}
-
-pub struct StartupAutoPowerOnStore(pub Mutex<StartupAutoPowerOnState>);
+pub struct StartupAutoPowerOnStore(pub Mutex<Option<ServiceResult<ClimateState>>>);
 
 impl Default for StartupAutoPowerOnStore {
     fn default() -> Self {
-        Self(Mutex::new(StartupAutoPowerOnState::Idle))
+        Self(Mutex::new(None))
     }
 }

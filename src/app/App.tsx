@@ -1,35 +1,26 @@
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import ConfigPage from "../pages/ConfigPage";
 import MainPage from "../pages/MainPage";
 import {
-  clearStartupAutoPowerOnStatus,
   getConfig,
-  getStartupAutoPowerOnStatus,
   hasToken as checkToken,
   hideWindow,
   minimizeWindow,
   refreshState,
   saveSettings,
   setTemperature,
+  takeStartupAutoPowerOnResult,
   turnOff,
   turnOn
 } from "../lib/commands";
-import {
-  defaultConfig,
-  type AppConfig,
-  type ClimateState,
-  type ServiceResult,
-  type StartupAutoPowerOnStatus
-} from "../lib/types";
+import { defaultConfig, type AppConfig, type ClimateState } from "../lib/types";
 
 type TabKey = "main" | "config";
 type StatusTone = "info" | "success" | "error";
 type StatusState = { tone: StatusTone; text: string };
 
 const STEP_CELSIUS = 1;
-const STARTUP_STATUS_POLL_COUNT = 20;
-const STARTUP_STATUS_POLL_DELAY_MS = 1000;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("main");
@@ -41,39 +32,44 @@ export default function App() {
     tone: "info",
     text: "正在加载配置..."
   });
-  const startupSyncCompletedRef = useRef(false);
-  const startupSyncRunningRef = useRef(false);
+
+  useEffect(() => {
+    void initialize();
+  }, []);
 
   useEffect(() => {
     let unlistenNavigate: (() => void) | undefined;
     let unlistenStartup: (() => void) | undefined;
-    let disposed = false;
 
-    void (async () => {
-      unlistenNavigate = await listen<string>("navigate", (event) => {
-        if (event.payload === "config") {
-          setActiveTab("config");
-        }
-
-        if (event.payload === "main") {
-          setActiveTab("main");
-        }
-      });
-
-      unlistenStartup = await listen<ServiceResult<ClimateState>>(
-        "startup-auto-power-on-finished",
-        (event) => {
-          void syncStartupState({ pending: false, result: event.payload });
-        }
-      );
-
-      if (!disposed) {
-        await initialize();
+    void listen<string>("navigate", (event) => {
+      if (event.payload === "config") {
+        setActiveTab("config");
       }
-    })();
+
+      if (event.payload === "main") {
+        setActiveTab("main");
+      }
+    }).then((dispose) => {
+      unlistenNavigate = dispose;
+    });
+
+    void listen<{ success: boolean; message: string; data: ClimateState | null }>(
+      "startup-auto-power-on-finished",
+      (event) => {
+        if (event.payload.data) {
+          setClimateState(event.payload.data);
+        }
+
+        setStatus({
+          tone: event.payload.success ? "success" : "error",
+          text: normalizeStatusText(event.payload.message)
+        });
+      }
+    ).then((dispose) => {
+      unlistenStartup = dispose;
+    });
 
     return () => {
-      disposed = true;
       unlistenNavigate?.();
       unlistenStartup?.();
     };
@@ -93,7 +89,6 @@ export default function App() {
       setHasToken(Boolean(tokenResult.data));
 
       if (!tokenResult.data) {
-        setActiveTab("config");
         setStatus({
           tone: "info",
           text: "请先在配置页保存访问令牌。"
@@ -101,13 +96,18 @@ export default function App() {
         return;
       }
 
-      const startupStatus = await getStartupAutoPowerOnStatus();
-      if (startupStatus.pending || startupStatus.result) {
-        void syncStartupState(startupStatus);
-        return;
-      }
-
       await handleRefresh();
+
+      const startupResult = await takeStartupAutoPowerOnResult();
+      if (startupResult?.data) {
+        setClimateState(startupResult.data);
+      }
+      if (startupResult) {
+        setStatus({
+          tone: startupResult.success ? "success" : "error",
+          text: normalizeStatusText(startupResult.message)
+        });
+      }
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`初始化失败: ${String(error)}`) });
     } finally {
@@ -172,9 +172,6 @@ export default function App() {
 
       setConfig(result.data);
       setHasToken(true);
-      setActiveTab("main");
-
-      await handleRefresh();
 
       return true;
     } catch (error) {
@@ -195,76 +192,6 @@ export default function App() {
 
   async function handleClose() {
     await hideWindow();
-  }
-
-  function applyStartupResult(result: ServiceResult<ClimateState> | null) {
-    if (!result) {
-      return false;
-    }
-
-    if (result.data) {
-      setClimateState(result.data);
-    }
-
-    setStatus({
-      tone: result.success ? "success" : "error",
-      text: normalizeStatusText(result.message)
-    });
-
-    return true;
-  }
-
-  async function syncStartupState(initialStatus?: StartupAutoPowerOnStatus) {
-    if (startupSyncCompletedRef.current || startupSyncRunningRef.current) {
-      return;
-    }
-
-    startupSyncRunningRef.current = true;
-
-    try {
-      let status = initialStatus ?? (await getStartupAutoPowerOnStatus());
-
-      if (status.pending) {
-        setStatus({
-          tone: "info",
-          text: "正在启动空调，请稍候..."
-        });
-      }
-
-      for (let index = 0; index < STARTUP_STATUS_POLL_COUNT; index += 1) {
-        if (status.result) {
-          applyStartupResult(status.result);
-          await handleRefresh();
-          await clearStartupAutoPowerOnStatus();
-          startupSyncCompletedRef.current = true;
-          return;
-        }
-
-        if (!status.pending) {
-          await handleRefresh();
-          await clearStartupAutoPowerOnStatus();
-          startupSyncCompletedRef.current = true;
-          return;
-        }
-
-        await delay(STARTUP_STATUS_POLL_DELAY_MS);
-        status = await getStartupAutoPowerOnStatus();
-      }
-
-      await handleRefresh();
-      await clearStartupAutoPowerOnStatus();
-      startupSyncCompletedRef.current = true;
-    } finally {
-      startupSyncRunningRef.current = false;
-    }
-  }
-
-  async function pollStartupStatus() {
-    if (startupSyncCompletedRef.current) {
-        return;
-    }
-
-    await syncStartupState();
   }
 
   return (
@@ -367,8 +294,4 @@ function normalizeStatusText(text: string) {
   return text
     .replace(/(\d+(?:\.\d+)?)\s*摄氏度/g, (_match, value) => `${Math.round(Number(value))} 摄氏度`)
     .replace(/(\d+(?:\.\d+)?)\s*°C/g, (_match, value) => `${Math.round(Number(value))} °C`);
-}
-
-function delay(ms: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }

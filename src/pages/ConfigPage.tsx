@@ -76,6 +76,7 @@ export default function ConfigPage({
                 空调ID <strong className="required-mark">*</strong>
               </span>
               <input
+                placeholder="例如：climate.living_room_ac"
                 value={draft.climateEntityId}
                 onChange={(event) => update("climateEntityId", event.target.value)}
               />

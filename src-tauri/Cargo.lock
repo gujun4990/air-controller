@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "air-controller"
-version = "0.1.31"
+version = "0.1.26"
 dependencies = [
  "auto-launch",
  "directories",

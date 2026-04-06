@@ -2,9 +2,7 @@ use crate::{
     auto_power_on,
     config::ConfigStore,
     ha_client::HomeAssistantClient,
-    models::{
-        AppConfig, ClimateState, ServiceResult, StartupAutoPowerOnStatus, StartupAutoPowerOnStore,
-    },
+    models::{AppConfig, ClimateState, ServiceResult, StartupAutoPowerOnStore},
     secure_store::SecureStore,
     startup,
 };
@@ -188,24 +186,10 @@ pub async fn run_auto_power_on_internal() -> ServiceResult<ClimateState> {
 }
 
 #[tauri::command]
-pub fn get_startup_auto_power_on_status(
+pub fn take_startup_auto_power_on_result(
     state: tauri::State<StartupAutoPowerOnStore>,
-) -> StartupAutoPowerOnStatus {
-    state
-        .0
-        .lock()
-        .map(|guard| guard.as_status())
-        .unwrap_or(StartupAutoPowerOnStatus {
-            pending: false,
-            result: None,
-        })
-}
-
-#[tauri::command]
-pub fn clear_startup_auto_power_on_status(state: tauri::State<StartupAutoPowerOnStore>) {
-    if let Ok(mut guard) = state.0.lock() {
-        *guard = crate::models::StartupAutoPowerOnState::Idle;
-    }
+) -> Option<ServiceResult<ClimateState>> {
+    state.0.lock().ok().and_then(|mut guard| guard.take())
 }
 
 #[tauri::command]

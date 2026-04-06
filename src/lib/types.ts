@@ -27,14 +27,9 @@ export type ServiceResult<T> = {
   data: T | null;
 };
 
-export type StartupAutoPowerOnStatus = {
-  pending: boolean;
-  result: ServiceResult<ClimateState> | null;
-};
-
 export const defaultConfig: AppConfig = {
   baseUrl: "",
-  climateEntityId: "climate.living_room_ac",
+  climateEntityId: "",
   defaultTemperature: 26,
   minTemperature: 16,
   maxTemperature: 30,
