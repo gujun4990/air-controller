@@ -467,20 +467,29 @@ label span {
 .config-shell {
   display: flex;
   flex-direction: column;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .config-form {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.55rem;
+}
+
+.config-header {
+  margin-bottom: 0.6rem;
+}
+
+.config-header p {
+  margin: 0.2rem 0 0;
+  line-height: 1.35;
 }
 
 .settings-section {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
-  padding: 0.95rem;
+  gap: 0.55rem;
+  padding: 0.78rem 0.85rem;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.03));
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -499,7 +508,7 @@ label span {
 
 .settings-grid {
   display: grid;
-  gap: 0.7rem;
+  gap: 0.55rem;
   align-content: start;
 }
 
@@ -508,7 +517,7 @@ label span {
 }
 
 .primary-settings {
-  padding: 0.9rem;
+  padding: 0.8rem 0.85rem;
 }
 
 .required-mark {
@@ -535,7 +544,11 @@ label span {
 
 label {
   display: grid;
-  gap: 0.45rem;
+  gap: 0.3rem;
+}
+
+.config-shell input {
+  padding: 0.62rem 0.8rem;
 }
 
 .actions-row,
@@ -546,8 +559,8 @@ label {
 
 .config-actions {
   justify-content: flex-end;
-  margin-top: 0.2rem;
-  padding-top: 0.8rem;
+  margin-top: 0.05rem;
+  padding-top: 0.65rem;
   border-top: 1px solid rgba(148, 163, 184, 0.08);
 }
 
