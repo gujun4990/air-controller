@@ -15,14 +15,10 @@ impl Default for CloseState {
 }
 
 const OPEN_ID: &str = "open";
-const CONFIG_ID: &str = "config";
 const QUIT_ID: &str = "quit";
 
 pub fn setup(app: &App) -> Result<(), String> {
     let open = MenuItemBuilder::with_id(OPEN_ID, "打开")
-        .build(app)
-        .map_err(|error| format!("创建托盘菜单失败: {error}"))?;
-    let config = MenuItemBuilder::with_id(CONFIG_ID, "配置")
         .build(app)
         .map_err(|error| format!("创建托盘菜单失败: {error}"))?;
     let quit = MenuItemBuilder::with_id(QUIT_ID, "退出")
@@ -30,7 +26,6 @@ pub fn setup(app: &App) -> Result<(), String> {
         .map_err(|error| format!("创建托盘菜单失败: {error}"))?;
     let menu = MenuBuilder::new(app)
         .item(&open)
-        .item(&config)
         .item(&quit)
         .build()
         .map_err(|error| format!("创建托盘菜单失败: {error}"))?;
@@ -57,10 +52,6 @@ pub fn setup(app: &App) -> Result<(), String> {
             OPEN_ID => {
                 let _ = show_main_window(app);
                 let _ = app.emit("navigate", "main");
-            }
-            CONFIG_ID => {
-                let _ = show_main_window(app);
-                let _ = app.emit("navigate", "config");
             }
             QUIT_ID => {
                 request_exit(app);
