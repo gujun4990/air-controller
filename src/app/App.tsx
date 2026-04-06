@@ -6,6 +6,7 @@ import {
   getConfig,
   hasToken as checkToken,
   hideWindow,
+  isSystemStartupLaunch,
   minimizeWindow,
   refreshState,
   saveSettings,
@@ -21,8 +22,8 @@ type StatusTone = "info" | "success" | "error";
 type StatusState = { tone: StatusTone; text: string };
 
 const STEP_CELSIUS = 1;
-const STARTUP_RESULT_POLL_INTERVAL_MS = 1000;
-const STARTUP_RESULT_POLL_ATTEMPTS = 15;
+const STARTUP_RESULT_RETRY_COUNT = 10;
+const STARTUP_RESULT_RETRY_DELAY_MS = 2000;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("main");
@@ -35,7 +36,6 @@ export default function App() {
     text: "正在加载配置..."
   });
   const startupResultHandledRef = useRef(false);
-  const startupResultPollingRef = useRef(false);
 
   useEffect(() => {
     let unlistenNavigate: (() => void) | undefined;
@@ -93,12 +93,31 @@ export default function App() {
         return;
       }
 
+      if (await isSystemStartupLaunch()) {
+        setStatus({
+          tone: "info",
+          text: "正在启动空调，请稍候..."
+        });
+
+        for (let index = 0; index < STARTUP_RESULT_RETRY_COUNT; index += 1) {
+          if (startupResultHandledRef.current) {
+            return;
+          }
+
+          if (await tryApplyStartupResult()) {
+            return;
+          }
+
+          await delay(STARTUP_RESULT_RETRY_DELAY_MS);
+        }
+
+        await handleRefresh();
+        return;
+      }
+
       await handleRefresh();
 
-      const startupResultApplied = await tryApplyPendingStartupResult();
-      if (!startupResultApplied) {
-        void pollStartupResult();
-      }
+      await tryApplyStartupResult();
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`初始化失败: ${String(error)}`) });
     } finally {
@@ -204,28 +223,8 @@ export default function App() {
     return true;
   }
 
-  async function tryApplyPendingStartupResult() {
+  async function tryApplyStartupResult() {
     return applyStartupResult(await takeStartupAutoPowerOnResult());
-  }
-
-  async function pollStartupResult() {
-    if (startupResultHandledRef.current || startupResultPollingRef.current) {
-      return;
-    }
-
-    startupResultPollingRef.current = true;
-
-    try {
-      for (let attempt = 0; attempt < STARTUP_RESULT_POLL_ATTEMPTS; attempt += 1) {
-        if (await tryApplyPendingStartupResult()) {
-          return;
-        }
-
-        await delay(STARTUP_RESULT_POLL_INTERVAL_MS);
-      }
-    } finally {
-      startupResultPollingRef.current = false;
-    }
   }
 
   return (
