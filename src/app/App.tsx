@@ -37,7 +37,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    let unlisten: (() => void) | undefined;
+    let unlistenNavigate: (() => void) | undefined;
+    let unlistenStartup: (() => void) | undefined;
 
     void listen<string>("navigate", (event) => {
       if (event.payload === "config") {
@@ -48,11 +49,18 @@ export default function App() {
         setActiveTab("main");
       }
     }).then((dispose) => {
-      unlisten = dispose;
+      unlistenNavigate = dispose;
+    });
+
+    void listen<string>("startup-auto-power-on-finished", () => {
+      void handleRefresh();
+    }).then((dispose) => {
+      unlistenStartup = dispose;
     });
 
     return () => {
-      unlisten?.();
+      unlistenNavigate?.();
+      unlistenStartup?.();
     };
   }, []);
 

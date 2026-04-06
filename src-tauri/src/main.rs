@@ -30,8 +30,10 @@ pub fn run() {
             }
 
             if startup::launched_from_system_startup() {
-                tauri::async_runtime::spawn(async {
+                let app_handle = app.handle().clone();
+                tauri::async_runtime::spawn(async move {
                     let _ = commands::run_auto_power_on_internal().await;
+                    let _ = app_handle.emit("startup-auto-power-on-finished", "done");
                 });
             }
 
