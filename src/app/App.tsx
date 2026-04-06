@@ -1,12 +1,11 @@
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ConfigPage from "../pages/ConfigPage";
 import MainPage from "../pages/MainPage";
 import {
   getConfig,
   hasToken as checkToken,
   hideWindow,
-  isSystemStartupLaunch,
   minimizeWindow,
   refreshState,
   saveSettings,
@@ -15,15 +14,15 @@ import {
   turnOff,
   turnOn
 } from "../lib/commands";
-import { defaultConfig, type AppConfig, type ClimateState } from "../lib/types";
+import { defaultConfig, type AppConfig, type ClimateState, type ServiceResult } from "../lib/types";
 
 type TabKey = "main" | "config";
 type StatusTone = "info" | "success" | "error";
 type StatusState = { tone: StatusTone; text: string };
 
 const STEP_CELSIUS = 1;
-const STARTUP_RESULT_RETRY_COUNT = 10;
-const STARTUP_RESULT_RETRY_DELAY_MS = 2000;
+const STARTUP_RESULT_POLL_INTERVAL_MS = 1000;
+const STARTUP_RESULT_POLL_ATTEMPTS = 15;
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabKey>("main");
@@ -35,44 +34,39 @@ export default function App() {
     tone: "info",
     text: "正在加载配置..."
   });
-
-  useEffect(() => {
-    void initialize();
-  }, []);
+  const startupResultHandledRef = useRef(false);
+  const startupResultPollingRef = useRef(false);
 
   useEffect(() => {
     let unlistenNavigate: (() => void) | undefined;
     let unlistenStartup: (() => void) | undefined;
+    let disposed = false;
 
-    void listen<string>("navigate", (event) => {
-      if (event.payload === "config") {
-        setActiveTab("config");
-      }
-
-      if (event.payload === "main") {
-        setActiveTab("main");
-      }
-    }).then((dispose) => {
-      unlistenNavigate = dispose;
-    });
-
-    void listen<{ success: boolean; message: string; data: ClimateState | null }>(
-      "startup-auto-power-on-finished",
-      (event) => {
-        if (event.payload.data) {
-          setClimateState(event.payload.data);
+    void (async () => {
+      unlistenNavigate = await listen<string>("navigate", (event) => {
+        if (event.payload === "config") {
+          setActiveTab("config");
         }
 
-        setStatus({
-          tone: event.payload.success ? "success" : "error",
-          text: normalizeStatusText(event.payload.message)
-        });
+        if (event.payload === "main") {
+          setActiveTab("main");
+        }
+      });
+
+      unlistenStartup = await listen<ServiceResult<ClimateState>>(
+        "startup-auto-power-on-finished",
+        (event) => {
+          applyStartupResult(event.payload);
+        }
+      );
+
+      if (!disposed) {
+        await initialize();
       }
-    ).then((dispose) => {
-      unlistenStartup = dispose;
-    });
+    })();
 
     return () => {
+      disposed = true;
       unlistenNavigate?.();
       unlistenStartup?.();
     };
@@ -99,32 +93,12 @@ export default function App() {
         return;
       }
 
-      if (await isSystemStartupLaunch()) {
-        setStatus({
-          tone: "info",
-          text: "正在启动空调，请稍候..."
-        });
-
-        for (let index = 0; index < STARTUP_RESULT_RETRY_COUNT; index += 1) {
-          const startupResult = await takeStartupAutoPowerOnResult();
-          if (startupResult) {
-            if (startupResult.data) {
-              setClimateState(startupResult.data);
-            }
-            setStatus({
-              tone: startupResult.success ? "success" : "error",
-              text: normalizeStatusText(startupResult.message)
-            });
-            break;
-          }
-
-          await new Promise((resolve) => window.setTimeout(resolve, STARTUP_RESULT_RETRY_DELAY_MS));
-        }
-
-        return;
-      }
-
       await handleRefresh();
+
+      const startupResultApplied = await tryApplyPendingStartupResult();
+      if (!startupResultApplied) {
+        void pollStartupResult();
+      }
     } catch (error) {
       setStatus({ tone: "error", text: normalizeStatusText(`初始化失败: ${String(error)}`) });
     } finally {
@@ -209,6 +183,49 @@ export default function App() {
 
   async function handleClose() {
     await hideWindow();
+  }
+
+  function applyStartupResult(result: ServiceResult<ClimateState> | null) {
+    if (!result || startupResultHandledRef.current) {
+      return false;
+    }
+
+    startupResultHandledRef.current = true;
+
+    if (result.data) {
+      setClimateState(result.data);
+    }
+
+    setStatus({
+      tone: result.success ? "success" : "error",
+      text: normalizeStatusText(result.message)
+    });
+
+    return true;
+  }
+
+  async function tryApplyPendingStartupResult() {
+    return applyStartupResult(await takeStartupAutoPowerOnResult());
+  }
+
+  async function pollStartupResult() {
+    if (startupResultHandledRef.current || startupResultPollingRef.current) {
+      return;
+    }
+
+    startupResultPollingRef.current = true;
+
+    try {
+      for (let attempt = 0; attempt < STARTUP_RESULT_POLL_ATTEMPTS; attempt += 1) {
+        if (await tryApplyPendingStartupResult()) {
+          return;
+        }
+
+        await delay(STARTUP_RESULT_POLL_INTERVAL_MS);
+      }
+    } finally {
+      startupResultPollingRef.current = false;
+    }
   }
 
   return (
@@ -311,4 +328,8 @@ function normalizeStatusText(text: string) {
   return text
     .replace(/(\d+(?:\.\d+)?)\s*摄氏度/g, (_match, value) => `${Math.round(Number(value))} 摄氏度`)
     .replace(/(\d+(?:\.\d+)?)\s*°C/g, (_match, value) => `${Math.round(Number(value))} °C`);
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
