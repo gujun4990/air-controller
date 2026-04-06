@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import ConfigPage from "../pages/ConfigPage";
 import MainPage from "../pages/MainPage";
 import {
+  clearStartupAutoPowerOnStatus,
   getConfig,
   getStartupAutoPowerOnStatus,
   hasToken as checkToken,
@@ -40,7 +41,8 @@ export default function App() {
     tone: "info",
     text: "正在加载配置..."
   });
-  const startupResultHandledRef = useRef(false);
+  const startupSyncCompletedRef = useRef(false);
+  const startupSyncRunningRef = useRef(false);
 
   useEffect(() => {
     let unlistenNavigate: (() => void) | undefined;
@@ -61,7 +63,7 @@ export default function App() {
       unlistenStartup = await listen<ServiceResult<ClimateState>>(
         "startup-auto-power-on-finished",
         (event) => {
-          applyStartupResult(event.payload);
+          void syncStartupState({ pending: false, result: event.payload });
         }
       );
 
@@ -91,6 +93,7 @@ export default function App() {
       setHasToken(Boolean(tokenResult.data));
 
       if (!tokenResult.data) {
+        setActiveTab("config");
         setStatus({
           tone: "info",
           text: "请先在配置页保存访问令牌。"
@@ -99,17 +102,8 @@ export default function App() {
       }
 
       const startupStatus = await getStartupAutoPowerOnStatus();
-      if (startupStatus.pending) {
-        setStatus({
-          tone: "info",
-          text: "正在启动空调，请稍候..."
-        });
-
-        void pollStartupStatus();
-        return;
-      }
-
-      if (applyStartupStatus(startupStatus)) {
+      if (startupStatus.pending || startupStatus.result) {
+        void syncStartupState(startupStatus);
         return;
       }
 
@@ -178,6 +172,9 @@ export default function App() {
 
       setConfig(result.data);
       setHasToken(true);
+      setActiveTab("main");
+
+      await handleRefresh();
 
       return true;
     } catch (error) {
@@ -201,11 +198,9 @@ export default function App() {
   }
 
   function applyStartupResult(result: ServiceResult<ClimateState> | null) {
-    if (!result || startupResultHandledRef.current) {
+    if (!result) {
       return false;
     }
-
-    startupResultHandledRef.current = true;
 
     if (result.data) {
       setClimateState(result.data);
@@ -219,30 +214,57 @@ export default function App() {
     return true;
   }
 
-  function applyStartupStatus(status: StartupAutoPowerOnStatus) {
-    return applyStartupResult(status.result);
+  async function syncStartupState(initialStatus?: StartupAutoPowerOnStatus) {
+    if (startupSyncCompletedRef.current || startupSyncRunningRef.current) {
+      return;
+    }
+
+    startupSyncRunningRef.current = true;
+
+    try {
+      let status = initialStatus ?? (await getStartupAutoPowerOnStatus());
+
+      if (status.pending) {
+        setStatus({
+          tone: "info",
+          text: "正在启动空调，请稍候..."
+        });
+      }
+
+      for (let index = 0; index < STARTUP_STATUS_POLL_COUNT; index += 1) {
+        if (status.result) {
+          applyStartupResult(status.result);
+          await handleRefresh();
+          await clearStartupAutoPowerOnStatus();
+          startupSyncCompletedRef.current = true;
+          return;
+        }
+
+        if (!status.pending) {
+          await handleRefresh();
+          await clearStartupAutoPowerOnStatus();
+          startupSyncCompletedRef.current = true;
+          return;
+        }
+
+        await delay(STARTUP_STATUS_POLL_DELAY_MS);
+        status = await getStartupAutoPowerOnStatus();
+      }
+
+      await handleRefresh();
+      await clearStartupAutoPowerOnStatus();
+      startupSyncCompletedRef.current = true;
+    } finally {
+      startupSyncRunningRef.current = false;
+    }
   }
 
   async function pollStartupStatus() {
-    for (let index = 0; index < STARTUP_STATUS_POLL_COUNT; index += 1) {
-      if (startupResultHandledRef.current) {
+    if (startupSyncCompletedRef.current) {
         return;
-      }
-
-      const status = await getStartupAutoPowerOnStatus();
-      if (applyStartupStatus(status)) {
-        return;
-      }
-
-      if (!status.pending) {
-        await handleRefresh();
-        return;
-      }
-
-      await delay(STARTUP_STATUS_POLL_DELAY_MS);
     }
 
-    await handleRefresh();
+    await syncStartupState();
   }
 
   return (

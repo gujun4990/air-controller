@@ -202,6 +202,13 @@ pub fn get_startup_auto_power_on_status(
 }
 
 #[tauri::command]
+pub fn clear_startup_auto_power_on_status(state: tauri::State<StartupAutoPowerOnStore>) {
+    if let Ok(mut guard) = state.0.lock() {
+        *guard = crate::models::StartupAutoPowerOnState::Idle;
+    }
+}
+
+#[tauri::command]
 pub fn minimize_window(window: tauri::WebviewWindow) -> ServiceResult<bool> {
     match window.minimize() {
         Ok(()) => ServiceResult::ok("窗口已最小化。", true),

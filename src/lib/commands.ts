@@ -33,6 +33,10 @@ export function getStartupAutoPowerOnStatus() {
   return invoke<StartupAutoPowerOnStatus>("get_startup_auto_power_on_status");
 }
 
+export function clearStartupAutoPowerOnStatus() {
+  return invoke<void>("clear_startup_auto_power_on_status");
+}
+
 export function minimizeWindow() {
   return invoke<ServiceResult<boolean>>("minimize_window");
 }

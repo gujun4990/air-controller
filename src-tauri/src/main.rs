@@ -66,6 +66,7 @@ pub fn run() {
             commands::turn_off,
             commands::set_temperature,
             commands::get_startup_auto_power_on_status,
+            commands::clear_startup_auto_power_on_status,
             commands::minimize_window,
             commands::hide_window
         ])
