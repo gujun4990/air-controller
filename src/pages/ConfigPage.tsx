@@ -93,13 +93,13 @@ export default function ConfigPage({
               />
             </label>
           </div>
-        </section>
 
-        <div className="actions-row config-actions">
-          <button disabled={busy} type="submit">
-            保存配置
-          </button>
-        </div>
+          <div className="actions-row config-actions">
+            <button disabled={busy} type="submit">
+              保存配置
+            </button>
+          </div>
+        </section>
       </form>
     </section>
   );
