@@ -31,13 +31,13 @@ pub fn run() {
             let _ = app.emit("navigate", "main");
         }))
         .setup(move |app| {
-            tray::setup(app)
-                .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
-
             if exit_requested {
-                tray::request_exit(&app.handle().clone());
+                app.handle().exit(0);
                 return Ok(());
             }
+
+            tray::setup(app)
+                .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
 
             let startup_result = startup::set_launch_on_startup(true);
             if !startup_result.success {
@@ -45,10 +45,6 @@ pub fn run() {
             }
 
             if launched_from_system_startup {
-                if let Some(window) = app.get_webview_window("main") {
-                    let _ = window.hide();
-                }
-
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     let result = commands::run_auto_power_on_internal().await;
@@ -57,6 +53,8 @@ pub fn run() {
                     }
                     let _ = app_handle.emit("startup-auto-power-on-finished", result);
                 });
+            } else {
+                let _ = tray::show_main_window(&app.handle().clone());
             }
 
             Ok(())
