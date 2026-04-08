@@ -14,24 +14,41 @@ mod tray;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let launched_from_system_startup = startup::launched_from_system_startup();
+    let exit_requested = std::env::args().any(|arg| arg == "--exit");
+
     tauri::Builder::default()
         .manage(tray::CloseState::default())
         .manage(StartupAutoPowerOnStore::default())
         .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_single_instance::init(|app, _argv, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+            if argv.iter().any(|arg| arg == "--exit") {
+                tray::request_exit(app);
+                return;
+            }
+
             let _ = tray::show_main_window(app);
             let _ = app.emit("navigate", "main");
         }))
-        .setup(|app| {
+        .setup(move |app| {
             tray::setup(app)
                 .map_err(|error| std::io::Error::new(std::io::ErrorKind::Other, error))?;
+
+            if exit_requested {
+                tray::request_exit(&app.handle().clone());
+                return Ok(());
+            }
 
             let startup_result = startup::set_launch_on_startup(true);
             if !startup_result.success {
                 eprintln!("注册系统自启动失败: {}", startup_result.message);
             }
 
-            if startup::launched_from_system_startup() {
+            if launched_from_system_startup {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+
                 let app_handle = app.handle().clone();
                 tauri::async_runtime::spawn(async move {
                     let result = commands::run_auto_power_on_internal().await;
