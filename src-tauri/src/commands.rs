@@ -182,7 +182,7 @@ pub async fn run_auto_power_on_internal() -> ServiceResult<ClimateState> {
         Err(message) => return ServiceResult::fail(message),
     };
 
-    auto_power_on::execute(config, &client).await
+    auto_power_on::execute(&client).await
 }
 
 #[tauri::command]
